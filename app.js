@@ -326,6 +326,46 @@ const DB = {
     }
   },
 
+  // CRUD: Update Batch
+  async updateBatch(batchId, name, subject, description, code) {
+    const payload = {
+      name,
+      description,
+      subject,
+      code: code.toUpperCase()
+    };
+    if (AppState.isMockMode) {
+      const batches = MockDB.get('batches');
+      const idx = batches.findIndex(b => b.batchId === batchId);
+      if (idx !== -1) {
+        batches[idx] = { ...batches[idx], ...payload };
+        MockDB.set('batches', batches);
+      }
+    } else {
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.batches,
+        batchId,
+        payload
+      );
+    }
+  },
+
+  // CRUD: Delete Batch
+  async deleteBatch(batchId) {
+    if (AppState.isMockMode) {
+      let batches = MockDB.get('batches');
+      batches = batches.filter(b => b.batchId !== batchId);
+      MockDB.set('batches', batches);
+    } else {
+      await appwriteDatabases.deleteDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.batches,
+        batchId
+      );
+    }
+  },
+
   // CRUD: Update Student Access Plan
   async updateStudentAccess(batchId, studentId, isEnabled, plan, expiryDate) {
     if (AppState.isMockMode) {
@@ -442,6 +482,32 @@ const DB = {
     }
   },
 
+  // CRUD: Update Study Material
+  async updateMaterial(materialId, batchId, title, description, fileUrl, fileType) {
+    const payload = {
+      batchId,
+      title,
+      description,
+      fileUrl,
+      fileType
+    };
+    if (AppState.isMockMode) {
+      const materials = MockDB.get('materials');
+      const idx = materials.findIndex(m => m.materialId === materialId);
+      if (idx !== -1) {
+        materials[idx] = { ...materials[idx], ...payload };
+        MockDB.set('materials', materials);
+      }
+    } else {
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.materials,
+        materialId,
+        payload
+      );
+    }
+  },
+
   // CRUD: Delete Chat Message (Moderation)
   async deleteChatMessage(messageId) {
     if (AppState.isMockMode) {
@@ -498,6 +564,30 @@ const DB = {
     }
   },
 
+  // CRUD: Update Announcement (Notice)
+  async updateAnnouncement(announcementId, batchId, title, content) {
+    const payload = {
+      batchId,
+      title,
+      content
+    };
+    if (AppState.isMockMode) {
+      const announcements = MockDB.get('announcements');
+      const idx = announcements.findIndex(a => a.announcementId === announcementId);
+      if (idx !== -1) {
+        announcements[idx] = { ...announcements[idx], ...payload };
+        MockDB.set('announcements', announcements);
+      }
+    } else {
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.announcements,
+        announcementId,
+        payload
+      );
+    }
+  },
+
   // CRUD: Create or Edit Retail Course Store Item
   async upsertCourse(courseId, title, price, description, coverImage, contentSummary) {
     const payload = {
@@ -540,6 +630,21 @@ const DB = {
           payload
         );
       }
+    }
+  },
+
+  // CRUD: Delete Retail Course Store Item
+  async deleteCourse(courseId) {
+    if (AppState.isMockMode) {
+      let courses = MockDB.get('courses');
+      courses = courses.filter(c => c.courseId !== courseId);
+      MockDB.set('courses', courses);
+    } else {
+      await appwriteDatabases.deleteDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.courses,
+        courseId
+      );
     }
   }
 };
@@ -762,7 +867,20 @@ const UI = {
         <td>
           <div class="action-row-buttons">
             <button class="btn btn-secondary btn-mini btn-copy-code" data-code="${escapeHTML(batch.code)}">
-              <i class="fa-solid fa-copy"></i> Copy Join Link
+              <i class="fa-solid fa-copy"></i> Join Link
+            </button>
+            <button class="btn btn-primary btn-mini btn-edit-batch" 
+                    data-id="${batch.batchId}" 
+                    data-name="${escapeHTML(batch.name)}" 
+                    data-subject="${escapeHTML(batch.subject)}" 
+                    data-desc="${escapeHTML(batch.description || '')}" 
+                    data-code="${escapeHTML(batch.code)}">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-mini btn-delete-batch" 
+                    data-id="${batch.batchId}" 
+                    data-name="${escapeHTML(batch.name)}">
+              <i class="fa-solid fa-trash-can"></i> WIPE
             </button>
           </div>
         </td>
@@ -921,9 +1039,20 @@ const UI = {
         <td><a href="${escapeHTML(mat.fileUrl)}" target="_blank" class="text-link" style="color:var(--secondary);word-break:break-all;">${escapeHTML(mat.fileUrl)}</a></td>
         <td>${timeStr}</td>
         <td>
-          <button class="btn btn-danger btn-mini btn-delete-material" data-id="${mat.materialId}" data-title="${escapeHTML(mat.title)}">
-            <i class="fa-solid fa-trash-can"></i> WIPE
-          </button>
+          <div class="action-row-buttons">
+            <button class="btn btn-primary btn-mini btn-edit-material" 
+                    data-id="${mat.materialId}" 
+                    data-batch-id="${mat.batchId}" 
+                    data-title="${escapeHTML(mat.title)}" 
+                    data-desc="${escapeHTML(mat.description)}" 
+                    data-type="${mat.fileType}" 
+                    data-url="${escapeHTML(mat.fileUrl)}">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-mini btn-delete-material" data-id="${mat.materialId}" data-title="${escapeHTML(mat.title)}">
+              <i class="fa-solid fa-trash-can"></i> WIPE
+            </button>
+          </div>
         </td>
       `;
       tbody.appendChild(row);
@@ -1038,7 +1167,7 @@ const UI = {
             <i class="fa-solid fa-graduation-cap"></i>
             <span>${escapeHTML(course.contentSummary)}</span>
           </div>
-          <div class="course-actions">
+          <div class="course-actions" style="display:flex; gap:5px; margin-top:10px;">
             <button class="btn btn-secondary btn-mini btn-edit-course" 
                     data-id="${course.courseId}" 
                     data-title="${escapeHTML(course.title)}" 
@@ -1047,6 +1176,12 @@ const UI = {
                     data-summary="${escapeHTML(course.contentSummary)}" 
                     data-cover="${escapeHTML(course.coverImage)}">
               <i class="fa-solid fa-pen"></i> Edit Detail
+            </button>
+            <button class="btn btn-danger btn-mini btn-delete-course" 
+                    data-id="${course.courseId}" 
+                    data-title="${escapeHTML(course.title)}"
+                    style="padding: 6px 12px; font-size: 11px;">
+              <i class="fa-solid fa-trash-can"></i> WIPE
             </button>
           </div>
         </div>
@@ -1105,9 +1240,18 @@ const UI = {
         <td><span class="text-secondary" style="font-size:12px;" title="${escapeHTML(ann.content)}">${escapeHTML(ann.content.substring(0, 50))}${ann.content.length > 50 ? '...' : ''}</span></td>
         <td>${timeStr}</td>
         <td>
-          <button class="btn btn-danger btn-mini btn-delete-notice" data-id="${ann.announcementId}" data-title="${escapeHTML(ann.title)}">
-            <i class="fa-solid fa-trash-can"></i> WIPE
-          </button>
+          <div class="action-row-buttons">
+            <button class="btn btn-primary btn-mini btn-edit-notice" 
+                    data-id="${ann.announcementId}" 
+                    data-batch-id="${ann.batchId}" 
+                    data-title="${escapeHTML(ann.title)}" 
+                    data-content="${escapeHTML(ann.content)}">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-mini btn-delete-notice" data-id="${ann.announcementId}" data-title="${escapeHTML(ann.title)}">
+              <i class="fa-solid fa-trash-can"></i> WIPE
+            </button>
+          </div>
         </td>
       `;
       tbody.appendChild(row);
@@ -1261,6 +1405,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal: Create Batch
   document.getElementById('btn-open-create-batch').addEventListener('click', () => {
     document.getElementById('form-create-batch').reset();
+    document.getElementById('edit-batch-id').value = '';
+    document.querySelector('#modal-create-batch h3').innerText = 'Create New Batch';
+    document.querySelector('#modal-create-batch button[type="submit"]').innerText = 'Establish Classroom';
     document.getElementById('batch-code').value = 'BCH' + Math.floor(100 + Math.random() * 900);
     document.getElementById('modal-create-batch').classList.add('active');
   });
@@ -1269,21 +1416,63 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('batch-code').value = 'BCH' + Math.floor(100 + Math.random() * 900);
   });
 
+  // Edit Batch Open
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-edit-batch');
+    if (!btn) return;
+
+    document.getElementById('edit-batch-id').value = btn.getAttribute('data-id');
+    document.getElementById('batch-name').value = btn.getAttribute('data-name');
+    document.getElementById('batch-subject').value = btn.getAttribute('data-subject');
+    document.getElementById('batch-description').value = btn.getAttribute('data-desc');
+    document.getElementById('batch-code').value = btn.getAttribute('data-code');
+
+    document.querySelector('#modal-create-batch h3').innerText = 'Edit Batch Classroom';
+    document.querySelector('#modal-create-batch button[type="submit"]').innerText = 'Save Changes';
+    document.getElementById('modal-create-batch').classList.add('active');
+  });
+
+  // WIPE: Delete Batch
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-delete-batch');
+    if (!btn) return;
+
+    const id = btn.getAttribute('data-id');
+    const name = btn.getAttribute('data-name');
+
+    if (confirm(`WIPE BATCH CLASSROOM?\n\nAre you sure you want to permanently delete "${name}"? All student enrollments and material references in this batch will be severed.`)) {
+      try {
+        await DB.deleteBatch(id);
+        Toast.show('Batch classroom deleted.', 'success');
+        await DB.syncAllData();
+        UI.renderBatches();
+      } catch (err) {
+        Toast.show('Failed to delete batch.', 'danger');
+      }
+    }
+  });
+
   document.getElementById('form-create-batch').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const batchId = document.getElementById('edit-batch-id').value;
     const name = document.getElementById('batch-name').value;
     const subject = document.getElementById('batch-subject').value;
     const desc = document.getElementById('batch-description').value;
     const code = document.getElementById('batch-code').value;
 
     try {
-      await DB.createBatch(name, subject, desc, code);
-      Toast.show('Classroom batch successfully listed.', 'success');
+      if (batchId) {
+        await DB.updateBatch(batchId, name, subject, desc, code);
+        Toast.show('Classroom batch successfully updated.', 'success');
+      } else {
+        await DB.createBatch(name, subject, desc, code);
+        Toast.show('Classroom batch successfully listed.', 'success');
+      }
       document.getElementById('modal-create-batch').classList.remove('active');
       await DB.syncAllData();
       UI.renderBatches();
     } catch (err) {
-      Toast.show(err.message || 'Failed to list classroom.', 'danger');
+      Toast.show(err.message || 'Failed to save classroom changes.', 'danger');
     }
   });
 
@@ -1371,11 +1560,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('form-upload-material').reset();
+    document.getElementById('edit-material-id').value = '';
+    document.querySelector('#modal-upload-material h3').innerText = 'Upload Study Material';
+    document.querySelector('#modal-upload-material button[type="submit"]').innerText = 'Publish Material';
+    document.getElementById('modal-upload-material').classList.add('active');
+  });
+
+  // Edit Material Open
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-edit-material');
+    if (!btn) return;
+
+    const batchSelect = document.getElementById('material-batch');
+    batchSelect.innerHTML = '';
+    AppState.batches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.batchId;
+      opt.innerText = b.name;
+      batchSelect.appendChild(opt);
+    });
+
+    document.getElementById('edit-material-id').value = btn.getAttribute('data-id');
+    document.getElementById('material-batch').value = btn.getAttribute('data-batch-id');
+    document.getElementById('material-title').value = btn.getAttribute('data-title');
+    document.getElementById('material-description').value = btn.getAttribute('data-desc');
+    document.getElementById('material-type').value = btn.getAttribute('data-type');
+    document.getElementById('material-url').value = btn.getAttribute('data-url');
+
+    document.querySelector('#modal-upload-material h3').innerText = 'Edit Study Material';
+    document.querySelector('#modal-upload-material button[type="submit"]').innerText = 'Save Changes';
     document.getElementById('modal-upload-material').classList.add('active');
   });
 
   document.getElementById('form-upload-material').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const materialId = document.getElementById('edit-material-id').value;
     const batchId = document.getElementById('material-batch').value;
     const title = document.getElementById('material-title').value;
     const desc = document.getElementById('material-description').value;
@@ -1383,13 +1602,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = document.getElementById('material-url').value;
 
     try {
-      await DB.createMaterial(batchId, title, desc, url, type);
-      Toast.show('Study material published successfully.', 'success');
+      if (materialId) {
+        await DB.updateMaterial(materialId, batchId, title, desc, url, type);
+        Toast.show('Study material updated successfully.', 'success');
+      } else {
+        await DB.createMaterial(batchId, title, desc, url, type);
+        Toast.show('Study material published successfully.', 'success');
+      }
       document.getElementById('modal-upload-material').classList.remove('active');
       await DB.syncAllData();
       UI.renderMaterials();
     } catch (err) {
-      Toast.show('Failed to post lecture resources.', 'danger');
+      Toast.show('Failed to save study material changes.', 'danger');
     }
   });
 
@@ -1502,9 +1726,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Compose Notice Broadcast Action
+  // Edit Broadcast notice load to composer
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-edit-notice');
+    if (!btn) return;
+
+    document.getElementById('edit-notice-id').value = btn.getAttribute('data-id');
+    document.getElementById('notice-batch').value = btn.getAttribute('data-batch-id');
+    document.getElementById('notice-title').value = btn.getAttribute('data-title');
+    document.getElementById('notice-content').value = btn.getAttribute('data-content');
+
+    document.getElementById('btn-broadcast-text').innerText = 'Update Notice';
+    document.getElementById('btn-cancel-notice-edit').style.display = 'block';
+
+    // Focus title field
+    document.getElementById('notice-title').focus();
+  });
+
+  // Cancel notice edit action
+  document.getElementById('btn-cancel-notice-edit').addEventListener('click', () => {
+    document.getElementById('form-broadcast-notice').reset();
+    document.getElementById('edit-notice-id').value = '';
+    document.getElementById('btn-broadcast-text').innerText = 'Broadcast Notice';
+    document.getElementById('btn-cancel-notice-edit').style.display = 'none';
+  });
+
+  // Compose / Update Notice Broadcast Action
   document.getElementById('form-broadcast-notice').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const noticeId = document.getElementById('edit-notice-id').value;
     const batchId = document.getElementById('notice-batch').value;
     const title = document.getElementById('notice-title').value;
     const content = document.getElementById('notice-content').value;
@@ -1515,13 +1765,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      await DB.createAnnouncement(batchId, title, content);
-      Toast.show('Notice broadcasted successfully!', 'success');
+      if (noticeId) {
+        await DB.updateAnnouncement(noticeId, batchId, title, content);
+        Toast.show('Notice updated successfully!', 'success');
+        document.getElementById('edit-notice-id').value = '';
+        document.getElementById('btn-broadcast-text').innerText = 'Broadcast Notice';
+        document.getElementById('btn-cancel-notice-edit').style.display = 'none';
+      } else {
+        await DB.createAnnouncement(batchId, title, content);
+        Toast.show('Notice broadcasted successfully!', 'success');
+      }
       document.getElementById('form-broadcast-notice').reset();
       await DB.syncAllData();
       UI.renderNotices();
     } catch (err) {
-      Toast.show('Notice broadcast failed.', 'danger');
+      Toast.show('Notice save action failed.', 'danger');
     }
   });
 
@@ -1537,10 +1795,36 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         await DB.deleteAnnouncement(id);
         Toast.show('Notice wiped from database.', 'success');
+        
+        // If we were editing this notice, reset the form
+        if (document.getElementById('edit-notice-id').value === id) {
+          document.getElementById('btn-cancel-notice-edit').click();
+        }
+
         await DB.syncAllData();
         UI.renderNotices();
       } catch (err) {
         Toast.show('Failed to delete notice.', 'danger');
+      }
+    }
+  });
+
+  // Delete Course Store Item
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-delete-course');
+    if (!btn) return;
+
+    const id = btn.getAttribute('data-id');
+    const title = btn.getAttribute('data-title');
+
+    if (confirm(`WIPE RETAIL COURSE?\n\nAre you sure you want to permanently delete course "${title}" from the retail store?`)) {
+      try {
+        await DB.deleteCourse(id);
+        Toast.show('Retail course deleted.', 'success');
+        await DB.syncAllData();
+        UI.renderCourses();
+      } catch (err) {
+        Toast.show('Failed to delete course.', 'danger');
       }
     }
   });

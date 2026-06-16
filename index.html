@@ -424,6 +424,7 @@
               <h4>Draft Broadcast</h4>
             </div>
             <form id="form-broadcast-notice" style="margin-top: 15px;">
+              <input type="hidden" id="edit-notice-id">
               <div class="form-group">
                 <label for="notice-batch">Classroom Batch</label>
                 <select id="notice-batch" class="form-control" required style="width: 100%;">
@@ -440,7 +441,10 @@
               </div>
               <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
                 <i class="fa-solid fa-paper-plane"></i>
-                <span>Broadcast Notice</span>
+                <span id="btn-broadcast-text">Broadcast Notice</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-block" id="btn-cancel-notice-edit" style="margin-top: 5px; display: none;">
+                Cancel Edit
               </button>
             </form>
           </div>
@@ -500,6 +504,7 @@
         <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="form-create-batch">
+        <input type="hidden" id="edit-batch-id">
         <div class="modal-body">
           <div class="form-group">
             <label for="batch-name">Batch Name</label>
@@ -593,6 +598,7 @@
         <button class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="form-upload-material">
+        <input type="hidden" id="edit-material-id">
         <div class="modal-body">
           <div class="form-group">
             <label for="material-batch">Classroom Batch</label>
