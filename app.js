@@ -9,7 +9,7 @@ const { Client, Account, Databases, Query, ID } = window.Appwrite || {};
 // 1. STATE MANAGEMENT & ENVIRONMENT CONFIG
 // ==========================================================================
 const AppState = {
-  isMockMode: true,
+  isMockMode: false,
   currentUser: null,
   activeView: 'view-dashboard',
   
@@ -2222,6 +2222,10 @@ function escapeHTML(str) {
 
 // Session auto-recovery on page load
 async function checkActiveSession() {
+  const mockToggle = document.getElementById('mock-mode-toggle');
+  if (!mockToggle) {
+    localStorage.setItem('hq_session_is_mock', 'false');
+  }
   const wasMock = localStorage.getItem('hq_session_is_mock') === 'true';
   const mockUserJson = localStorage.getItem('hq_session_user');
   
@@ -2231,7 +2235,6 @@ async function checkActiveSession() {
       AppState.currentUser = JSON.parse(mockUserJson);
       
       // Sync toggle state in UI
-      const mockToggle = document.getElementById('mock-mode-toggle');
       if (mockToggle) mockToggle.checked = true;
       
       await restoreSessionUI();
@@ -2339,7 +2342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const mockToggle = document.getElementById('mock-mode-toggle');
-    const isMock = mockToggle ? mockToggle.checked : true;
+    const isMock = mockToggle ? mockToggle.checked : false;
     
     const btn = document.getElementById('btn-login');
     btn.disabled = true;
