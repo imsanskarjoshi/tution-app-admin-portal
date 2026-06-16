@@ -21,6 +21,8 @@ const AppState = {
   courses: [],
   enrollments: [],
   announcements: [],
+  transactions: [],
+  coupons: [],
 
   // Chart instances
   trendChart: null,
@@ -38,7 +40,9 @@ const AppwriteConfig = window.AppwriteConfig || {
     chats: 'chats',
     courses: 'courses',
     enrollments: 'enrollments',
-    announcements: 'announcements'
+    announcements: 'announcements',
+    transactions: 'transactions',
+    coupons: 'coupons'
   }
 };
 
@@ -53,18 +57,18 @@ const MockDB = {
   initialize() {
     if (!localStorage.getItem('hq_mock_batches')) {
       localStorage.setItem('hq_mock_batches', JSON.stringify([
-        { batchId: 'b_1', name: 'Physics Honors 2026', subject: 'Physics', code: 'PHY101', teacherId: 'admin_hq', createdAt: '2026-01-15T10:00:00Z', description: 'Advanced electromagnetic theory and kinematics.' },
-        { batchId: 'b_2', name: 'Calculus Advanced', subject: 'Mathematics', code: 'MAT202', teacherId: 'admin_hq', createdAt: '2026-02-10T12:00:00Z', description: 'Differential equations, integrations, and limits.' },
-        { batchId: 'b_3', name: 'Organic Chemistry Fundamentals', subject: 'Chemistry', code: 'CHE303', teacherId: 'admin_hq', createdAt: '2026-03-01T14:30:00Z', description: 'Hydrocarbon reactions, IUPAC naming, and synthesis.' }
+        { batchId: 'b_1', name: 'Physics Honors 2026', subject: 'Physics', code: 'PHY101', teacherId: 'admin_hq', teacherName: 'Sanskar Admin', createdAt: '2026-01-15T10:00:00Z', description: 'Advanced electromagnetic theory and kinematics.', schedule: 'Mon, Wed, Fri - 4:00 PM', isAccessEnabled: true },
+        { batchId: 'b_2', name: 'Calculus Advanced', subject: 'Mathematics', code: 'MAT202', teacherId: 'admin_hq', teacherName: 'Prof. Verma', createdAt: '2026-02-10T12:00:00Z', description: 'Differential equations, integrations, and limits.', schedule: 'Tue, Thu - 5:00 PM', isAccessEnabled: true },
+        { batchId: 'b_3', name: 'Organic Chemistry Fundamentals', subject: 'Chemistry', code: 'CHE303', teacherId: 'admin_hq', teacherName: 'Dr. Mehta', createdAt: '2026-03-01T14:30:00Z', description: 'Hydrocarbon reactions, IUPAC naming, and synthesis.', schedule: 'Sat, Sun - 10:00 AM', isAccessEnabled: false }
       ]));
     }
     if (!localStorage.getItem('hq_mock_users')) {
       localStorage.setItem('hq_mock_users', JSON.stringify([
-        { userId: 'admin_hq', name: 'Sanskar Admin', email: 'sanskar@tuitionapp.com', role: 'admin', joinedAt: '2025-12-01T09:00:00Z' },
-        { userId: 'std_1', name: 'John Doe', email: 'john.doe@gmail.com', role: 'student', joinedAt: '2026-01-20T11:00:00Z' },
-        { userId: 'std_2', name: 'Jane Smith', email: 'jane.smith@gmail.com', role: 'student', joinedAt: '2026-02-15T09:30:00Z' },
-        { userId: 'std_3', name: 'Robert Chen', email: 'robert.chen@gmail.com', role: 'student', joinedAt: '2026-03-10T15:00:00Z' },
-        { userId: 'std_4', name: 'Emily Davis', email: 'emily.davis@gmail.com', role: 'student', joinedAt: '2026-04-05T10:00:00Z' }
+        { userId: 'admin_hq', name: 'Sanskar Admin', email: 'sanskar@tuitionapp.com', role: 'admin', joinedAt: '2025-12-01T09:00:00Z', isBanned: false },
+        { userId: 'std_1', name: 'John Doe', email: 'john.doe@gmail.com', role: 'student', joinedAt: '2026-01-20T11:00:00Z', isBanned: false },
+        { userId: 'std_2', name: 'Jane Smith', email: 'jane.smith@gmail.com', role: 'student', joinedAt: '2026-02-15T09:30:00Z', isBanned: false },
+        { userId: 'std_3', name: 'Robert Chen', email: 'robert.chen@gmail.com', role: 'student', joinedAt: '2026-03-10T15:00:00Z', isBanned: true },
+        { userId: 'std_4', name: 'Emily Davis', email: 'emily.davis@gmail.com', role: 'student', joinedAt: '2026-04-05T10:00:00Z', isBanned: false }
       ]));
     }
     if (!localStorage.getItem('hq_mock_enrollments')) {
@@ -77,9 +81,9 @@ const MockDB = {
     }
     if (!localStorage.getItem('hq_mock_materials')) {
       localStorage.setItem('hq_mock_materials', JSON.stringify([
-        { materialId: 'm_1', batchId: 'b_1', title: 'Electromagnetism Lecture 1', description: 'Coulomb Law and static charges overview', fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', fileType: 'video', createdAt: '2026-01-22T09:00:00Z' },
-        { materialId: 'm_2', batchId: 'b_2', title: 'Calculus derivatives cheat sheet', description: 'Standard derivative formulas with practice templates', fileUrl: 'https://pdfobject.com/pdf/sample.pdf', fileType: 'pdf', createdAt: '2026-02-12T14:00:00Z' },
-        { materialId: 'm_3', batchId: 'b_3', title: 'Alkane & Alkene Synthesis Notes', description: 'Review summary of reaction triggers', fileUrl: 'https://pdfobject.com/pdf/sample.pdf', fileType: 'pdf', createdAt: '2026-03-05T10:00:00Z' }
+        { materialId: 'm_1', batchId: 'b_1', title: 'Electromagnetism Lecture 1', description: 'Coulomb Law and static charges overview', fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', fileType: 'video', createdAt: '2026-01-22T09:00:00Z', viewsCount: 142, isDraft: false, tags: 'Core NCERT' },
+        { materialId: 'm_2', batchId: 'b_2', title: 'Calculus derivatives cheat sheet', description: 'Standard derivative formulas with practice templates', fileUrl: 'https://pdfobject.com/pdf/sample.pdf', fileType: 'pdf', createdAt: '2026-02-12T14:00:00Z', viewsCount: 89, isDraft: false, tags: 'Revision Summary' },
+        { materialId: 'm_3', batchId: 'b_3', title: 'Alkane & Alkene Synthesis Notes', description: 'Review summary of reaction triggers', fileUrl: 'https://pdfobject.com/pdf/sample.pdf', fileType: 'pdf', createdAt: '2026-03-05T10:00:00Z', viewsCount: 12, isDraft: true, tags: 'Advanced Organic' }
       ]));
     }
     if (!localStorage.getItem('hq_mock_chats')) {
@@ -92,8 +96,21 @@ const MockDB = {
     }
     if (!localStorage.getItem('hq_mock_courses')) {
       localStorage.setItem('hq_mock_courses', JSON.stringify([
-        { courseId: 'crs_1', title: 'Organic Chemistry Masterclass', description: 'A complete video syllabus teaching carbon pathways, IUPAC formatting, and synthesis formulas.', coverImage: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=450', price: 49.99, teacherId: 'admin_hq', contentSummary: '15 lectures • 4 mock tests • syllabus notes', createdAt: '2026-02-01T10:00:00Z' },
-        { courseId: 'crs_2', title: 'High School Physics Boot Camp', description: 'Quick revision course for mechanics, kinematics, and circuit electricity models.', coverImage: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=450', price: 39.99, teacherId: 'admin_hq', contentSummary: '10 lectures • 3 quizzes', createdAt: '2026-02-15T11:00:00Z' }
+        { courseId: 'crs_1', title: 'Organic Chemistry Masterclass', description: 'A complete video syllabus teaching carbon pathways, IUPAC formatting, and synthesis formulas.', coverImage: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=450', price: 49.99, teacherId: 'admin_hq', contentSummary: '15 lectures • 4 mock tests • syllabus notes', createdAt: '2026-02-01T10:00:00Z', isDraft: false },
+        { courseId: 'crs_2', title: 'High School Physics Boot Camp', description: 'Quick revision course for mechanics, kinematics, and circuit electricity models.', coverImage: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=450', price: 39.99, teacherId: 'admin_hq', contentSummary: '10 lectures • 3 quizzes', createdAt: '2026-02-15T11:00:00Z', isDraft: false }
+      ]));
+    }
+    if (!localStorage.getItem('hq_mock_transactions')) {
+      localStorage.setItem('hq_mock_transactions', JSON.stringify([
+        { id: 'tx_1', studentName: 'John Doe', studentEmail: 'john.doe@gmail.com', courseTitle: 'Organic Chemistry Masterclass', amount: 49.99, promoApplied: 'NONE', timestamp: '2026-06-14T10:00:00Z' },
+        { id: 'tx_2', studentName: 'Jane Smith', studentEmail: 'jane.smith@gmail.com', courseTitle: 'High School Physics Boot Camp', amount: 19.99, promoApplied: 'HALFPRICE', timestamp: '2026-06-15T15:30:00Z' }
+      ]));
+    }
+    if (!localStorage.getItem('hq_mock_coupons')) {
+      localStorage.setItem('hq_mock_coupons', JSON.stringify([
+        { id: 'cp_1', code: 'HALFPRICE', discount: 50, isActive: true },
+        { id: 'cp_2', code: 'WELCOME10', discount: 10, isActive: true },
+        { id: 'cp_3', code: 'EXPIRED20', discount: 20, isActive: false }
       ]));
     }
   },
@@ -267,9 +284,11 @@ const DB = {
       AppState.courses = MockDB.get('courses');
       AppState.enrollments = MockDB.get('enrollments');
       AppState.announcements = MockDB.get('announcements');
+      AppState.transactions = MockDB.get('transactions');
+      AppState.coupons = MockDB.get('coupons');
     } else {
       // Fetch Live collections
-      const [batchesDoc, usersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc] = await Promise.all([
+      const promises = [
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.batches),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.users, [Query.equal('role', 'student')]),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.materials),
@@ -277,7 +296,25 @@ const DB = {
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.courses),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.enrollments),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.announcements)
-      ]);
+      ];
+
+      // Dynamic collection checks to avoid crashing if transactions/coupons collections don't exist
+      const txPromise = appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.transactions)
+        .catch(err => {
+          console.warn('Transactions collection not found or accessible in Appwrite database.', err);
+          return { documents: [] };
+        });
+      const cpPromise = appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.coupons)
+        .catch(err => {
+          console.warn('Coupons collection not found or accessible in Appwrite database.', err);
+          return { documents: [] };
+        });
+
+      promises.push(txPromise, cpPromise);
+
+      const [
+        batchesDoc, usersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc, transactionsDoc, couponsDoc
+      ] = await Promise.all(promises);
 
       // Map doc entries
       AppState.batches = batchesDoc.documents.map(d => ({ batchId: d.$id, ...d }));
@@ -287,11 +324,13 @@ const DB = {
       AppState.courses = coursesDoc.documents.map(d => ({ courseId: d.$id, ...d }));
       AppState.enrollments = enrollmentsDoc.documents.map(d => ({ id: d.$id, ...d }));
       AppState.announcements = announcementsDoc.documents.map(d => ({ announcementId: d.$id, ...d }));
+      AppState.transactions = transactionsDoc.documents.map(d => ({ id: d.$id, ...d }));
+      AppState.coupons = couponsDoc.documents.map(d => ({ id: d.$id, ...d }));
     }
   },
 
   // CRUD: Create Batch
-  async createBatch(name, subject, description, code) {
+  async createBatch(name, subject, description, code, schedule = '', teacherName = '') {
     if (AppState.isMockMode) {
       const batches = MockDB.get('batches');
       if (batches.some(b => b.code.toUpperCase() === code.toUpperCase())) {
@@ -304,6 +343,9 @@ const DB = {
         description,
         code: code.toUpperCase(),
         teacherId: AppState.currentUser.userId,
+        teacherName: teacherName || AppState.currentUser.name,
+        schedule: schedule || 'TBD',
+        isAccessEnabled: true,
         createdAt: new Date().toISOString()
       };
       batches.push(newBatch);
@@ -317,6 +359,9 @@ const DB = {
         subject,
         code: code.toUpperCase(),
         teacherId: AppState.currentUser.userId,
+        teacherName: teacherName || AppState.currentUser.name,
+        schedule: schedule || 'TBD',
+        isAccessEnabled: true,
         createdAt: new Date().toISOString()
       };
       return await appwriteDatabases.createDocument(
@@ -329,12 +374,14 @@ const DB = {
   },
 
   // CRUD: Update Batch
-  async updateBatch(batchId, name, subject, description, code) {
+  async updateBatch(batchId, name, subject, description, code, schedule = '', teacherName = '') {
     const payload = {
       name,
       description,
       subject,
-      code: code.toUpperCase()
+      code: code.toUpperCase(),
+      schedule,
+      teacherName
     };
     if (AppState.isMockMode) {
       const batches = MockDB.get('batches');
@@ -460,7 +507,7 @@ const DB = {
   },
 
   // CRUD: Publish Study Material
-  async createMaterial(batchId, title, description, fileUrl, fileType) {
+  async createMaterial(batchId, title, description, fileUrl, fileType, tags = '', isDraft = false) {
     if (AppState.isMockMode) {
       const materials = MockDB.get('materials');
       const newMat = {
@@ -470,6 +517,9 @@ const DB = {
         description,
         fileUrl,
         fileType,
+        tags,
+        isDraft,
+        viewsCount: 0,
         createdAt: new Date().toISOString()
       };
       materials.push(newMat);
@@ -483,6 +533,9 @@ const DB = {
         description,
         fileUrl,
         fileType,
+        tags,
+        isDraft,
+        viewsCount: 0,
         createdAt: new Date().toISOString()
       };
       return await appwriteDatabases.createDocument(
@@ -510,13 +563,15 @@ const DB = {
   },
 
   // CRUD: Update Study Material
-  async updateMaterial(materialId, batchId, title, description, fileUrl, fileType) {
+  async updateMaterial(materialId, batchId, title, description, fileUrl, fileType, tags = '', isDraft = false) {
     const payload = {
       batchId,
       title,
       description,
       fileUrl,
-      fileType
+      fileType,
+      tags,
+      isDraft
     };
     if (AppState.isMockMode) {
       const materials = MockDB.get('materials');
@@ -532,6 +587,182 @@ const DB = {
         materialId,
         payload
       );
+    }
+  },
+
+  // CRUD: Toggle Material Draft state quickly
+  async toggleMaterialDraftState(materialId, isDraft) {
+    if (AppState.isMockMode) {
+      const materials = MockDB.get('materials');
+      const idx = materials.findIndex(m => m.materialId === materialId);
+      if (idx !== -1) {
+        materials[idx].isDraft = isDraft;
+        MockDB.set('materials', materials);
+      }
+    } else {
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.materials,
+        materialId,
+        { isDraft }
+      );
+    }
+  },
+
+  // CRUD: Increment Resource View Counter
+  async incrementResourceViews(materialId) {
+    if (AppState.isMockMode) {
+      const materials = MockDB.get('materials');
+      const idx = materials.findIndex(m => m.materialId === materialId);
+      if (idx !== -1) {
+        materials[idx].viewsCount = (materials[idx].viewsCount || 0) + 1;
+        MockDB.set('materials', materials);
+      }
+    } else {
+      try {
+        const mat = AppState.materials.find(m => m.materialId === materialId);
+        if (mat) {
+          await appwriteDatabases.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.materials,
+            materialId,
+            { viewsCount: (mat.viewsCount || 0) + 1 }
+          );
+        }
+      } catch (_) {}
+    }
+  },
+
+  // CRUD: Update Student Global Ban State
+  async updateStudentBanState(studentId, isBanned) {
+    if (AppState.isMockMode) {
+      const users = MockDB.get('users');
+      const idx = users.findIndex(u => u.userId === studentId);
+      if (idx !== -1) {
+        users[idx].isBanned = isBanned;
+        MockDB.set('users', users);
+      }
+    } else {
+      try {
+        await appwriteDatabases.updateDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.users,
+          studentId,
+          { isBanned }
+        );
+      } catch (e) {
+        console.error('Failed to update live user ban status', e);
+        Toast.show('Failed to toggle ban status. If in Live Mode, make sure the "isBanned" boolean attribute exists on your "users" collection in Appwrite.', 'danger');
+        throw e;
+      }
+    }
+  },
+
+  // CRUD: Create Promo Coupon
+  async createCoupon(code, discount) {
+    const uppercaseCode = code.toUpperCase();
+    if (AppState.isMockMode) {
+      const coupons = MockDB.get('coupons');
+      if (coupons.some(c => c.code === uppercaseCode)) {
+        throw new Error('A coupon with this code already exists.');
+      }
+      const newCp = {
+        id: 'cp_' + Date.now(),
+        code: uppercaseCode,
+        discount: parseFloat(discount),
+        isActive: true
+      };
+      coupons.push(newCp);
+      MockDB.set('coupons', coupons);
+      return newCp;
+    } else {
+      try {
+        return await appwriteDatabases.createDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.coupons,
+          ID.unique(),
+          {
+            code: uppercaseCode,
+            discount: parseFloat(discount),
+            isActive: true
+          }
+        );
+      } catch (err) {
+        console.error('Failed to create live coupon', err);
+        Toast.show('Failed to save coupon in Live Mode. Make sure the "coupons" collection exists and has code/discount/isActive attributes.', 'danger');
+        throw err;
+      }
+    }
+  },
+
+  // CRUD: Delete Promo Coupon
+  async deleteCoupon(couponId) {
+    if (AppState.isMockMode) {
+      let coupons = MockDB.get('coupons');
+      coupons = coupons.filter(c => c.id !== couponId);
+      MockDB.set('coupons', coupons);
+    } else {
+      await appwriteDatabases.deleteDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.coupons,
+        couponId
+      );
+    }
+  },
+
+  // CRUD: Toggle Coupon Active State
+  async toggleCouponState(couponId, isActive) {
+    if (AppState.isMockMode) {
+      const coupons = MockDB.get('coupons');
+      const idx = coupons.findIndex(c => c.id === couponId);
+      if (idx !== -1) {
+        coupons[idx].isActive = isActive;
+        MockDB.set('coupons', coupons);
+      }
+    } else {
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.coupons,
+        couponId,
+        { isActive }
+      );
+    }
+  },
+
+  // CRUD: Log Transaction checkout
+  async logTransaction(studentName, studentEmail, courseTitle, amount, promoApplied = 'NONE') {
+    if (AppState.isMockMode) {
+      const transactions = MockDB.get('transactions');
+      const newTx = {
+        id: 'tx_' + Date.now(),
+        studentName,
+        studentEmail,
+        courseTitle,
+        amount: parseFloat(amount),
+        promoApplied,
+        timestamp: new Date().toISOString()
+      };
+      transactions.push(newTx);
+      MockDB.set('transactions', transactions);
+      return newTx;
+    } else {
+      try {
+        return await appwriteDatabases.createDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.transactions,
+          ID.unique(),
+          {
+            studentName,
+            studentEmail,
+            courseTitle,
+            amount: parseFloat(amount),
+            promoApplied,
+            timestamp: new Date().toISOString()
+          }
+        );
+      } catch (err) {
+        console.warn('Could not save transaction log in Live Mode database.', err);
+      }
     }
   },
 
@@ -616,13 +847,14 @@ const DB = {
   },
 
   // CRUD: Create or Edit Retail Course Store Item
-  async upsertCourse(courseId, title, price, description, coverImage, contentSummary) {
+  async upsertCourse(courseId, title, price, description, coverImage, contentSummary, isDraft = false) {
     const payload = {
       title,
       price: parseFloat(price) || 0.0,
       description,
       coverImage: coverImage || 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=450',
       contentSummary,
+      isDraft,
       teacherId: AppState.currentUser.userId,
       createdAt: new Date().toISOString()
     };
@@ -672,6 +904,31 @@ const DB = {
         AppwriteConfig.collections.courses,
         courseId
       );
+    }
+  },
+
+  // CRUD: Toggle Course Draft state
+  async toggleCourseDraftState(courseId, isDraft) {
+    if (AppState.isMockMode) {
+      const courses = MockDB.get('courses');
+      const idx = courses.findIndex(c => c.courseId === courseId);
+      if (idx !== -1) {
+        courses[idx].isDraft = isDraft;
+        MockDB.set('courses', courses);
+      }
+    } else {
+      try {
+        await appwriteDatabases.updateDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.courses,
+          courseId,
+          { isDraft }
+        );
+      } catch (e) {
+        console.error('Failed to toggle live course draft state', e);
+        Toast.show('Failed to toggle draft status. Make sure the "isDraft" boolean attribute exists on your "courses" collection in Appwrite.', 'danger');
+        throw e;
+      }
     }
   }
 };
@@ -743,37 +1000,131 @@ const UI = {
     UI.drawEnrollmentChart();
     UI.drawSubjectChart();
 
-    // Render Recent logs table
-    const tbody = document.querySelector('#dashboard-recent-table tbody');
-    tbody.innerHTML = '';
-
-    const recentLogs = [...AppState.materials]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 5);
-
-    if (recentLogs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;" class="text-secondary">No recent publish logs found.</td></tr>`;
-      return;
+    // Render schedules list
+    const scheduleListEl = document.getElementById('dashboard-schedule-list');
+    if (scheduleListEl) {
+      scheduleListEl.innerHTML = '';
+      const batchesWithSchedules = AppState.batches.filter(b => b.schedule);
+      if (batchesWithSchedules.length === 0) {
+        scheduleListEl.innerHTML = `<p class="text-secondary text-center" style="font-size:12px;margin-top:20px;">No class schedules defined.</p>`;
+      } else {
+        batchesWithSchedules.forEach(batch => {
+          const card = document.createElement('div');
+          card.className = 'schedule-card';
+          card.innerHTML = `
+            <span class="schedule-title">${escapeHTML(batch.name)}</span>
+            <span class="schedule-time"><i class="fa-regular fa-clock"></i> ${escapeHTML(batch.schedule)}</span>
+            <span class="schedule-teacher"><i class="fa-regular fa-user"></i> ${escapeHTML(batch.teacherName || 'Educator')}</span>
+          `;
+          scheduleListEl.appendChild(card);
+        });
+      }
     }
 
-    recentLogs.forEach(item => {
-      const batchName = AppState.batches.find(b => b.batchId === item.batchId)?.name || 'General';
-      const row = document.createElement('tr');
-      const timeStr = new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      row.innerHTML = `
-        <td>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid ${item.fileType === 'video' ? 'fa-circle-play text-amber' : 'fa-file-pdf text-red'}"></i>
-            <strong>${escapeHTML(item.title)}</strong>
-          </div>
-        </td>
-        <td>${escapeHTML(batchName)}</td>
-        <td>Educator Console</td>
-        <td>${timeStr}</td>
-        <td><span class="badge badge-success">Published</span></td>
-      `;
-      tbody.appendChild(row);
-    });
+    // Render Recent logs table (Unified Feed)
+    const tbody = document.querySelector('#dashboard-recent-table tbody');
+    if (tbody) {
+      tbody.innerHTML = '';
+
+      const eventLogs = [];
+
+      // Add materials events
+      AppState.materials.forEach(m => {
+        eventLogs.push({
+          type: 'material',
+          title: m.title,
+          batchId: m.batchId,
+          createdAt: m.createdAt,
+          fileType: m.fileType,
+          isDraft: m.isDraft,
+          publisher: 'Educator Console'
+        });
+      });
+
+      // Add notices events
+      AppState.announcements.forEach(a => {
+        eventLogs.push({
+          type: 'notice',
+          title: a.title,
+          batchId: a.batchId,
+          createdAt: a.createdAt,
+          publisher: 'Broadcaster'
+        });
+      });
+
+      // Add transactions events
+      AppState.transactions.forEach(t => {
+        eventLogs.push({
+          type: 'transaction',
+          title: `Purchased: ${t.courseTitle} (${t.studentName})`,
+          batchId: 'store_checkout',
+          createdAt: t.timestamp,
+          amount: t.amount,
+          publisher: `Promo: ${t.promoApplied || 'NONE'}`
+        });
+      });
+
+      // Sort and slice
+      const recentLogs = eventLogs
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+
+      if (recentLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;" class="text-secondary">No recent system events logged.</td></tr>`;
+        return;
+      }
+
+      recentLogs.forEach(item => {
+        const batchName = item.batchId === 'store_checkout' 
+          ? 'Store Checkout' 
+          : (AppState.batches.find(b => b.batchId === item.batchId)?.name || 'General');
+        
+        const row = document.createElement('tr');
+        const timeStr = new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        if (item.type === 'material') {
+          row.innerHTML = `
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid ${item.fileType === 'video' ? 'fa-circle-play text-amber' : 'fa-file-pdf text-red'}"></i>
+                <strong>${escapeHTML(item.title)}</strong>
+              </div>
+            </td>
+            <td>${escapeHTML(batchName)}</td>
+            <td>${escapeHTML(item.publisher)}</td>
+            <td>${timeStr}</td>
+            <td><span class="badge ${item.isDraft ? 'badge-warning-glow' : 'badge-success'}">${item.isDraft ? 'Draft' : 'Published'}</span></td>
+          `;
+        } else if (item.type === 'notice') {
+          row.innerHTML = `
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-bullhorn text-indigo"></i>
+                <strong>Notice: ${escapeHTML(item.title)}</strong>
+              </div>
+            </td>
+            <td>${escapeHTML(batchName)}</td>
+            <td>${escapeHTML(item.publisher)}</td>
+            <td>${timeStr}</td>
+            <td><span class="badge badge-info">Broadcast</span></td>
+          `;
+        } else if (item.type === 'transaction') {
+          row.innerHTML = `
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-wallet text-green"></i>
+                <strong>${escapeHTML(item.title)}</strong>
+              </div>
+            </td>
+            <td>Store Checkout</td>
+            <td>${escapeHTML(item.publisher)}</td>
+            <td>${timeStr}</td>
+            <td><span class="badge badge-success">Paid ($${item.amount.toFixed(2)})</span></td>
+          `;
+        }
+        tbody.appendChild(row);
+      });
+    }
   },
 
   // Draw Charts helpers
@@ -914,6 +1265,8 @@ const UI = {
                     data-name="${escapeHTML(batch.name)}" 
                     data-subject="${escapeHTML(batch.subject)}" 
                     data-desc="${escapeHTML(batch.description || '')}" 
+                    data-schedule="${escapeHTML(batch.schedule || '')}"
+                    data-teacher-name="${escapeHTML(batch.teacherName || '')}"
                     data-code="${escapeHTML(batch.code)}">
               <i class="fa-solid fa-pen"></i> Edit
             </button>
@@ -929,20 +1282,26 @@ const UI = {
     });
   },
 
-  // Render: Student Registry
   renderStudents() {
     const tbody = document.querySelector('#students-table tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     const searchVal = document.getElementById('search-students').value.toLowerCase();
     const filterPlan = document.getElementById('filter-students-plan').value;
+    const filterStatus = document.getElementById('filter-students-status').value;
 
     const filtered = AppState.students.filter(student => {
       // Name or email filter
       const matchesSearch = student.name.toLowerCase().includes(searchVal) || student.email.toLowerCase().includes(searchVal);
-      
-      // Access plan filter
       if (!matchesSearch) return false;
+
+      // Status filter
+      const isBanned = student.isBanned === true;
+      if (filterStatus === 'active' && isBanned) return false;
+      if (filterStatus === 'banned' && !isBanned) return false;
+
+      // Access plan filter
       if (filterPlan === 'all') return true;
 
       // Find any batch enrollment for this student
@@ -959,7 +1318,7 @@ const UI = {
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;" class="text-muted">No students matching parameters.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-muted">No students matching parameters.</td></tr>`;
       return;
     }
 
@@ -967,6 +1326,10 @@ const UI = {
       // Find batch enrollments
       const studentEnrollments = AppState.enrollments.filter(e => e.studentId === student.userId);
       
+      const accountStatusBadge = student.isBanned 
+        ? `<span class="badge badge-danger-glow"><i class="fa-solid fa-user-slash"></i> Suspended</span>` 
+        : `<span class="badge badge-success"><i class="fa-solid fa-user-check"></i> Active</span>`;
+
       if (studentEnrollments.length === 0) {
         // Render student without active batch
         const row = document.createElement('tr');
@@ -984,10 +1347,22 @@ const UI = {
           <td><span class="text-muted">No Batch Joined</span></td>
           <td><span class="badge badge-danger">Unenrolled</span></td>
           <td>--</td>
+          <td>${accountStatusBadge}</td>
           <td>
             <div class="action-row-buttons">
               <button class="btn btn-secondary btn-mini btn-enroll-student-direct" data-student-id="${student.userId}">
                 <i class="fa-solid fa-link"></i> Enroll to Batch
+              </button>
+              <button class="btn btn-primary btn-mini btn-edit-access" 
+                      data-student-id="${student.userId}" 
+                      data-batch-id="" 
+                      data-name="${escapeHTML(student.name)}" 
+                      data-email="${escapeHTML(student.email)}" 
+                      data-plan="expired" 
+                      data-expiry=""
+                      data-banned="${student.isBanned ? 'true' : 'false'}"
+                      data-enabled="false">
+                <i class="fa-solid fa-user-shield"></i> Update Plan
               </button>
             </div>
           </td>
@@ -1021,6 +1396,7 @@ const UI = {
           <td><strong>${escapeHTML(batchName)}</strong></td>
           <td>${statusBadge}</td>
           <td>${isExpired ? `<span class="text-danger">${expiryStr}</span>` : `<span class="text-success">${expiryStr}</span>`}</td>
+          <td>${accountStatusBadge}</td>
           <td>
             <div class="action-row-buttons">
               <button class="btn btn-primary btn-mini btn-edit-access" 
@@ -1030,6 +1406,7 @@ const UI = {
                       data-email="${escapeHTML(student.email)}" 
                       data-plan="${plan}" 
                       data-expiry="${enroll.subscriptionExpiresAt.split('T')[0]}"
+                      data-banned="${student.isBanned ? 'true' : 'false'}"
                       data-enabled="${!(isExpired || plan === 'expired')}">
                 <i class="fa-solid fa-user-shield"></i> Update Plan
               </button>
@@ -1041,9 +1418,9 @@ const UI = {
     });
   },
 
-  // Render: Materials View
   renderMaterials() {
     const tbody = document.querySelector('#materials-table tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     const searchVal = document.getElementById('search-materials').value.toLowerCase();
@@ -1070,22 +1447,44 @@ const UI = {
         ? `<span class="badge badge-warning"><i class="fa-solid fa-play"></i> Video</span>`
         : `<span class="badge badge-info"><i class="fa-solid fa-file-pdf"></i> PDF</span>`;
 
+      // Render tags dynamically
+      const tagsHtml = mat.tags 
+        ? mat.tags.split(',').map(t => `<span class="tag-badge">${escapeHTML(t.trim())}</span>`).join('') 
+        : '';
+
+      const statusBadge = mat.isDraft 
+        ? `<span class="badge badge-warning-glow">Draft</span>` 
+        : `<span class="badge badge-success">Published</span>`;
+
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td><strong>${escapeHTML(mat.title)}</strong></td>
+        <td>
+          <strong>${escapeHTML(mat.title)}</strong>
+          <div class="text-secondary" style="font-size:11px;margin-top:2px;">${escapeHTML(mat.description)}</div>
+          <div style="margin-top:6px;">${tagsHtml}</div>
+        </td>
         <td>${escapeHTML(batchName)}</td>
-        <td>${typeBadge}</td>
-        <td><span class="text-secondary" style="font-size:12px;">${escapeHTML(mat.description)}</span></td>
-        <td><a href="${escapeHTML(mat.fileUrl)}" target="_blank" class="text-link" style="color:var(--secondary);word-break:break-all;">${escapeHTML(mat.fileUrl)}</a></td>
+        <td><a href="${escapeHTML(mat.fileUrl)}" target="_blank" style="text-decoration:none;">${typeBadge}</a></td>
+        <td><i class="fa-regular fa-eye" style="margin-right:4px;"></i> ${mat.viewsCount || 0}</td>
+        <td>${statusBadge}</td>
         <td>${timeStr}</td>
         <td>
           <div class="action-row-buttons">
+            <button class="btn btn-secondary btn-mini btn-toggle-material-draft" 
+                    data-id="${mat.materialId}" 
+                    data-draft="${mat.isDraft ? 'false' : 'true'}"
+                    title="${mat.isDraft ? 'Publish Material' : 'Save as Draft'}">
+              <i class="fa-solid ${mat.isDraft ? 'fa-eye' : 'fa-eye-slash'}"></i> 
+              ${mat.isDraft ? 'Publish' : 'Draft'}
+            </button>
             <button class="btn btn-primary btn-mini btn-edit-material" 
                     data-id="${mat.materialId}" 
                     data-batch-id="${mat.batchId}" 
                     data-title="${escapeHTML(mat.title)}" 
                     data-desc="${escapeHTML(mat.description)}" 
                     data-type="${mat.fileType}" 
+                    data-tags="${escapeHTML(mat.tags || '')}"
+                    data-draft="${mat.isDraft ? 'true' : 'false'}"
                     data-url="${escapeHTML(mat.fileUrl)}">
               <i class="fa-solid fa-pen"></i> Edit
             </button>
@@ -1099,9 +1498,9 @@ const UI = {
     });
   },
 
-  // Render: Moderation view layout
   renderModeration() {
     const listUl = document.getElementById('mod-batches-ul');
+    if (!listUl) return;
     listUl.innerHTML = '';
 
     if (AppState.batches.length === 0) {
@@ -1128,6 +1527,20 @@ const UI = {
       });
       listUl.appendChild(li);
     });
+
+    // Render flagged moderation queue
+    UI.renderFlaggedMessages();
+  },
+
+  reloadActiveChat() {
+    const activeLi = document.querySelector('#mod-batches-ul li.active');
+    if (activeLi) {
+      const activeBatchId = activeLi.getAttribute('data-id');
+      const batch = AppState.batches.find(b => b.batchId === activeBatchId);
+      if (batch) {
+        UI.loadModerationChat(batch);
+      }
+    }
   },
 
   // Load chat logs inside moderation panel
@@ -1138,17 +1551,28 @@ const UI = {
     codeEl.className = 'badge badge-info';
 
     const scroller = document.getElementById('chat-logs-scroller');
+    if (!scroller) return;
     scroller.innerHTML = '';
 
-    const messages = AppState.chats
-      .filter(c => c.batchId === batch.batchId)
-      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const searchInput = document.getElementById('chat-search-input');
+    const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+
+    let messages = AppState.chats.filter(c => c.batchId === batch.batchId);
+
+    if (searchQuery) {
+      messages = messages.filter(msg => 
+        (msg.content || '').toLowerCase().includes(searchQuery) || 
+        (msg.senderName || '').toLowerCase().includes(searchQuery)
+      );
+    }
+
+    messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
     if (messages.length === 0) {
       scroller.innerHTML = `
         <div class="chat-empty-state">
           <i class="fa-regular fa-comment-dots"></i>
-          <p>No chat history recorded in this batch yet.</p>
+          <p>${searchQuery ? 'No messages match search query.' : 'No chat history recorded in this batch yet.'}</p>
         </div>
       `;
       return;
@@ -1183,51 +1607,167 @@ const UI = {
     scroller.scrollTop = scroller.scrollHeight;
   },
 
-  // Render: Retail Store Catalog
-  renderCourses() {
-    const grid = document.getElementById('courses-grid-container');
-    grid.innerHTML = '';
+  renderFlaggedMessages() {
+    const flaggedUl = document.getElementById('mod-flagged-ul');
+    if (!flaggedUl) return;
+    flaggedUl.innerHTML = '';
 
-    if (AppState.courses.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);" class="bg-glass">No courses listed in store. Publish your first Retail syllabus package.</div>`;
+    AppState.dismissedFlaggedMessageIds = AppState.dismissedFlaggedMessageIds || [];
+
+    const flaggedKeywords = ['spam', 'scam', 'fuck', 'shit', 'cheat', 'hack', 'leak', 'idiot', 'stupid', 'abusive'];
+    const flaggedChats = AppState.chats.filter(c => {
+      if (AppState.dismissedFlaggedMessageIds.includes(c.messageId)) return false;
+      const contentLower = (c.content || '').toLowerCase();
+      return flaggedKeywords.some(kw => contentLower.includes(kw));
+    });
+
+    if (flaggedChats.length === 0) {
+      flaggedUl.innerHTML = `<li style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px 0;">No flagged messages in queue.</li>`;
       return;
     }
 
-    AppState.courses.forEach(course => {
-      const card = document.createElement('div');
-      card.className = 'course-card bg-glass';
-      card.innerHTML = `
-        <div class="course-banner" style="background-image: url('${escapeHTML(course.coverImage)}')">
-          <span class="course-price-badge">$${course.price.toFixed(2)}</span>
+    flaggedChats.forEach(msg => {
+      const li = document.createElement('li');
+      li.className = 'flagged-item-card';
+      li.innerHTML = `
+        <div class="flagged-sender">
+          <span>${escapeHTML(msg.senderName)}</span>
+          <span style="font-size:10px;color:var(--danger);text-transform:uppercase;font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Flagged</span>
         </div>
-        <div class="course-info">
-          <h4>${escapeHTML(course.title)}</h4>
-          <p>${escapeHTML(course.description)}</p>
-          <div class="course-stats-line">
-            <i class="fa-solid fa-graduation-cap"></i>
-            <span>${escapeHTML(course.contentSummary)}</span>
-          </div>
-          <div class="course-actions" style="display:flex; gap:5px; margin-top:10px;">
-            <button class="btn btn-secondary btn-mini btn-edit-course" 
-                    data-id="${course.courseId}" 
-                    data-title="${escapeHTML(course.title)}" 
-                    data-price="${course.price}" 
-                    data-desc="${escapeHTML(course.description)}" 
-                    data-summary="${escapeHTML(course.contentSummary)}" 
-                    data-cover="${escapeHTML(course.coverImage)}">
-              <i class="fa-solid fa-pen"></i> Edit Detail
-            </button>
-            <button class="btn btn-danger btn-mini btn-delete-course" 
-                    data-id="${course.courseId}" 
-                    data-title="${escapeHTML(course.title)}"
-                    style="padding: 6px 12px; font-size: 11px;">
-              <i class="fa-solid fa-trash-can"></i> WIPE
-            </button>
-          </div>
+        <p class="flagged-text">"${escapeHTML(msg.content)}"</p>
+        <div class="flagged-actions">
+          <button class="btn btn-danger btn-mini btn-mod-wipe" data-msg-id="${msg.messageId}" style="flex:1;padding:4px;font-size:10px;">
+            <i class="fa-solid fa-trash-can"></i> Wipe
+          </button>
+          <button class="btn btn-secondary btn-mini btn-mod-dismiss" data-msg-id="${msg.messageId}" style="flex:1;padding:4px;font-size:10px;">
+            <i class="fa-solid fa-xmark"></i> Dismiss
+          </button>
+          <button class="btn btn-danger btn-mini btn-mod-ban" data-student-id="${msg.senderId}" data-name="${escapeHTML(msg.senderName)}" style="flex:1;padding:4px;font-size:10px;">
+            <i class="fa-solid fa-ban"></i> Ban
+          </button>
         </div>
       `;
-      grid.appendChild(card);
+      flaggedUl.appendChild(li);
     });
+  },
+
+  renderCourses() {
+    // 1. Render store catalog
+    const grid = document.getElementById('courses-grid-container');
+    if (grid) {
+      grid.innerHTML = '';
+      if (AppState.courses.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);" class="bg-glass">No courses listed in store. Publish your first Retail syllabus package.</div>`;
+      } else {
+        AppState.courses.forEach(course => {
+          const card = document.createElement('div');
+          card.className = 'course-card bg-glass';
+          const draftBadge = course.isDraft
+            ? '<span class="badge badge-warning-glow" style="margin-left: 8px;">Draft</span>'
+            : '<span class="badge badge-success" style="margin-left: 8px;">Published</span>';
+          
+          card.innerHTML = `
+            <div class="course-banner" style="background-image: url('${escapeHTML(course.coverImage)}')">
+              <span class="course-price-badge">$${course.price.toFixed(2)}</span>
+            </div>
+            <div class="course-info">
+              <h4 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+                ${escapeHTML(course.title)}
+                ${draftBadge}
+              </h4>
+              <p>${escapeHTML(course.description)}</p>
+              <div class="course-stats-line">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>${escapeHTML(course.contentSummary)}</span>
+              </div>
+              <div class="course-actions" style="display:flex; gap:5px; margin-top:10px; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-mini btn-toggle-course-draft" 
+                        data-id="${course.courseId}" 
+                        data-draft="${course.isDraft ? 'false' : 'true'}"
+                        title="${course.isDraft ? 'Publish Course' : 'Save as Draft'}">
+                  <i class="fa-solid ${course.isDraft ? 'fa-eye' : 'fa-eye-slash'}"></i>
+                  ${course.isDraft ? 'Publish' : 'Draft'}
+                </button>
+                <button class="btn btn-secondary btn-mini btn-edit-course" 
+                        data-id="${course.courseId}" 
+                        data-title="${escapeHTML(course.title)}" 
+                        data-price="${course.price}" 
+                        data-desc="${escapeHTML(course.description)}" 
+                        data-summary="${escapeHTML(course.contentSummary)}" 
+                        data-cover="${escapeHTML(course.coverImage)}"
+                        data-draft="${course.isDraft ? 'true' : 'false'}">
+                  <i class="fa-solid fa-pen"></i> Edit Detail
+                </button>
+                <button class="btn btn-danger btn-mini btn-delete-course" 
+                        data-id="${course.courseId}" 
+                        data-title="${escapeHTML(course.title)}"
+                        style="padding: 6px 12px; font-size: 11px;">
+                  <i class="fa-solid fa-trash-can"></i> WIPE
+                </button>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+    }
+
+    // 2. Render Transactions Ledger
+    const txBody = document.querySelector('#transactions-table tbody');
+    if (txBody) {
+      txBody.innerHTML = '';
+      const sortedTxs = [...AppState.transactions].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+      if (sortedTxs.length === 0) {
+        txBody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-secondary">No checkout transactions logged yet.</td></tr>`;
+      } else {
+        sortedTxs.forEach(tx => {
+          const row = document.createElement('tr');
+          const timeStr = new Date(tx.timestamp).toLocaleString();
+          row.innerHTML = `
+            <td><code>${escapeHTML(tx.id)}</code></td>
+            <td><strong>${escapeHTML(tx.studentName)}</strong></td>
+            <td>${escapeHTML(tx.studentEmail)}</td>
+            <td>${escapeHTML(tx.courseTitle)}</td>
+            <td><span class="text-success" style="font-weight:700;">$${tx.amount.toFixed(2)}</span></td>
+            <td><span class="badge badge-info">${escapeHTML(tx.promoApplied || 'NONE')}</span></td>
+            <td>${timeStr}</td>
+          `;
+          txBody.appendChild(row);
+        });
+      }
+    }
+
+    // 3. Render Promo Coupons
+    const cpBody = document.querySelector('#coupons-table tbody');
+    if (cpBody) {
+      cpBody.innerHTML = '';
+      if (AppState.coupons.length === 0) {
+        cpBody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-secondary">No coupons created yet.</td></tr>`;
+      } else {
+        AppState.coupons.forEach(cp => {
+          const row = document.createElement('tr');
+          const isActive = cp.isActive !== false;
+          row.innerHTML = `
+            <td><code style="font-size:14px;font-weight:700;color:var(--secondary);">${escapeHTML(cp.code)}</code></td>
+            <td><strong>${cp.discount}% OFF</strong></td>
+            <td><span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">${isActive ? 'Active' : 'Disabled'}</span></td>
+            <td>
+              <div class="action-row-buttons">
+                <button class="btn ${isActive ? 'btn-danger' : 'btn-success'} btn-mini btn-toggle-coupon" 
+                        data-id="${cp.id}" 
+                        data-active="${isActive ? 'false' : 'true'}">
+                  <i class="fa-solid ${isActive ? 'fa-ban' : 'fa-circle-check'}"></i> ${isActive ? 'Disable' : 'Enable'}
+                </button>
+                <button class="btn btn-danger btn-mini btn-delete-coupon" data-id="${cp.id}">
+                  <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+              </div>
+            </td>
+          `;
+          cpBody.appendChild(row);
+        });
+      }
+    }
   },
 
   // Render: Notices Hub
@@ -1599,6 +2139,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('batch-name').value = btn.getAttribute('data-name');
     document.getElementById('batch-subject').value = btn.getAttribute('data-subject');
     document.getElementById('batch-description').value = btn.getAttribute('data-desc');
+    document.getElementById('batch-schedule').value = btn.getAttribute('data-schedule') || '';
+    document.getElementById('batch-teacher-name').value = btn.getAttribute('data-teacher-name') || '';
     document.getElementById('batch-code').value = btn.getAttribute('data-code');
 
     document.querySelector('#modal-create-batch h3').innerText = 'Edit Batch Classroom';
@@ -1659,14 +2201,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = document.getElementById('batch-name').value;
     const subject = document.getElementById('batch-subject').value;
     const desc = document.getElementById('batch-description').value;
+    const schedule = document.getElementById('batch-schedule').value;
+    const teacherName = document.getElementById('batch-teacher-name').value;
     const code = document.getElementById('batch-code').value;
 
     try {
       if (batchId) {
-        await DB.updateBatch(batchId, name, subject, desc, code);
+        await DB.updateBatch(batchId, name, subject, desc, code, schedule, teacherName);
         Toast.show('Classroom batch successfully updated.', 'success');
       } else {
-        await DB.createBatch(name, subject, desc, code);
+        await DB.createBatch(name, subject, desc, code, schedule, teacherName);
         Toast.show('Classroom batch successfully listed.', 'success');
       }
       document.getElementById('modal-create-batch').classList.remove('active');
@@ -1689,12 +2233,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-student-avatar').innerText = btn.getAttribute('data-name').substring(0, 1).toUpperCase();
     
     const plan = btn.getAttribute('data-plan');
-    const expiry = btn.getAttribute('data-expiry');
+    const expiry = btn.getAttribute('data-expiry') || '';
     const enabled = btn.getAttribute('data-enabled') === 'true';
+    const banned = btn.getAttribute('data-banned') === 'true';
 
     document.getElementById('edit-student-plan').value = plan;
     document.getElementById('edit-student-expiry').value = expiry;
     document.getElementById('edit-student-enabled').checked = enabled;
+    document.getElementById('edit-student-banned').checked = banned;
 
     document.getElementById('modal-edit-student').classList.add('active');
   });
@@ -1706,11 +2252,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const plan = document.getElementById('edit-student-plan').value;
     const expiry = document.getElementById('edit-student-expiry').value;
     const enabled = document.getElementById('edit-student-enabled').checked;
+    const banned = document.getElementById('edit-student-banned').checked;
 
     try {
-      await DB.updateStudentAccess(batchId, studentId, enabled, plan, expiry);
-      Toast.show('Student subscription permissions updated.', 'success');
-      document.getElementById('modal-edit-student').classList.remove('remove');
+      // If batchId is empty, student doesn't have enrollment yet but we can create one or skip enrollment update
+      if (batchId) {
+        await DB.updateStudentAccess(batchId, studentId, enabled, plan, expiry);
+      }
+      await DB.updateStudentBanState(studentId, banned);
+      Toast.show('Student subscription permissions and status updated.', 'success');
       document.getElementById('modal-edit-student').classList.remove('active');
       await DB.syncAllData();
       UI.renderStudents();
@@ -1787,6 +2337,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('material-description').value = btn.getAttribute('data-desc');
     document.getElementById('material-type').value = btn.getAttribute('data-type');
     document.getElementById('material-url').value = btn.getAttribute('data-url');
+    document.getElementById('material-tags').value = btn.getAttribute('data-tags') || '';
+    document.getElementById('material-is-draft').checked = btn.getAttribute('data-draft') === 'true';
 
     document.querySelector('#modal-upload-material h3').innerText = 'Edit Study Material';
     document.querySelector('#modal-upload-material button[type="submit"]').innerText = 'Save Changes';
@@ -1801,13 +2353,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const desc = document.getElementById('material-description').value;
     const type = document.getElementById('material-type').value;
     const url = document.getElementById('material-url').value;
+    const tags = document.getElementById('material-tags').value.trim();
+    const isDraft = document.getElementById('material-is-draft').checked;
 
     try {
       if (materialId) {
-        await DB.updateMaterial(materialId, batchId, title, desc, url, type);
+        await DB.updateMaterial(materialId, batchId, title, desc, url, type, tags, isDraft);
         Toast.show('Study material updated successfully.', 'success');
       } else {
-        await DB.createMaterial(batchId, title, desc, url, type);
+        await DB.createMaterial(batchId, title, desc, url, type, tags, isDraft);
         Toast.show('Study material published successfully.', 'success');
       }
       document.getElementById('modal-upload-material').classList.remove('active');
@@ -1886,6 +2440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('course-description').value = btn.getAttribute('data-desc');
     document.getElementById('course-summary').value = btn.getAttribute('data-summary');
     document.getElementById('course-cover').value = btn.getAttribute('data-cover');
+    document.getElementById('course-is-draft').checked = btn.getAttribute('data-draft') === 'true';
 
     document.getElementById('course-modal-title').innerText = 'Edit Retail Course';
     document.getElementById('btn-course-submit-text').innerText = 'Save Changes';
@@ -1900,9 +2455,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const desc = document.getElementById('course-description').value;
     const summary = document.getElementById('course-summary').value;
     const cover = document.getElementById('course-cover').value;
+    const isDraft = document.getElementById('course-is-draft').checked;
 
     try {
-      await DB.upsertCourse(courseId, title, price, desc, cover, summary);
+      await DB.upsertCourse(courseId, title, price, desc, cover, summary, isDraft);
       Toast.show(courseId ? 'Course updated successfully.' : 'New retail course published.', 'success');
       document.getElementById('modal-create-course').classList.remove('active');
       await DB.syncAllData();
@@ -2029,5 +2585,227 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // COMMERCE SUB-TABS INTERACTIVE NAV
+  document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const subviewId = btn.getAttribute('data-subview');
+      
+      // Update buttons
+      document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Switch view panels
+      document.querySelectorAll('.subview-container').forEach(panel => {
+        if (panel.id === subviewId) {
+          panel.style.display = 'block';
+          panel.classList.add('active');
+        } else {
+          panel.style.display = 'none';
+          panel.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // GENERATE PROMO COUPON SUBMISSION
+  const formCreateCoupon = document.getElementById('form-create-coupon');
+  if (formCreateCoupon) {
+    formCreateCoupon.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const codeInput = document.getElementById('coupon-code');
+      const discountInput = document.getElementById('coupon-discount');
+      const code = codeInput.value.trim();
+      const discount = discountInput.value;
+
+      try {
+        await DB.createCoupon(code, discount);
+        Toast.show(`Promo coupon "${code.toUpperCase()}" generated successfully.`, 'success');
+        formCreateCoupon.reset();
+        await DB.syncAllData();
+        UI.renderCourses();
+      } catch (err) {
+        Toast.show(err.message || 'Coupon generation failed.', 'danger');
+      }
+    });
+  }
+
+  // EVENT DELEGATION: Toggle Coupon active status & Delete Coupon
+  document.addEventListener('click', async (e) => {
+    const btnToggle = e.target.closest('.btn-toggle-coupon');
+    if (btnToggle) {
+      const id = btnToggle.getAttribute('data-id');
+      const targetState = btnToggle.getAttribute('data-active') === 'true';
+      try {
+        await DB.toggleCouponState(id, targetState);
+        Toast.show(`Coupon status updated to: ${targetState ? 'Enabled' : 'Disabled'}`, 'success');
+        await DB.syncAllData();
+        UI.renderCourses();
+      } catch (err) {
+        // Error already handled
+      }
+      return;
+    }
+
+    const btnDelete = e.target.closest('.btn-delete-coupon');
+    if (btnDelete) {
+      const id = btnDelete.getAttribute('data-id');
+      if (confirm('Permanently delete this promo code? This cannot be undone.')) {
+        try {
+          await DB.deleteCoupon(id);
+          Toast.show('Promo coupon deleted successfully.', 'success');
+          await DB.syncAllData();
+          UI.renderCourses();
+        } catch (err) {
+          Toast.show('Failed to delete coupon.', 'danger');
+        }
+      }
+      return;
+    }
+  });
+
+  // EVENT DELEGATION: Flagged Chat Queue Action buttons
+  document.addEventListener('click', async (e) => {
+    const btnWipe = e.target.closest('.btn-mod-wipe');
+    if (btnWipe) {
+      const msgId = btnWipe.getAttribute('data-msg-id');
+      if (confirm('Purge and delete this message from classroom discussion feed?')) {
+        try {
+          await DB.deleteChatMessage(msgId);
+          Toast.show('Inappropriate message wiped.', 'success');
+          await DB.syncAllData();
+          UI.renderModeration();
+          UI.reloadActiveChat();
+        } catch (err) {
+          Toast.show('Failed to purge flagged message.', 'danger');
+        }
+      }
+      return;
+    }
+
+    const btnDismiss = e.target.closest('.btn-mod-dismiss');
+    if (btnDismiss) {
+      const msgId = btnDismiss.getAttribute('data-msg-id');
+      AppState.dismissedFlaggedMessageIds = AppState.dismissedFlaggedMessageIds || [];
+      AppState.dismissedFlaggedMessageIds.push(msgId);
+      Toast.show('Message dismissed from flagged moderation list.', 'info');
+      UI.renderFlaggedMessages();
+      return;
+    }
+
+    const btnBan = e.target.closest('.btn-mod-ban');
+    if (btnBan) {
+      const studentId = btnBan.getAttribute('data-student-id');
+      const name = btnBan.getAttribute('data-name');
+      if (confirm(`Ban "${name}" globally?\n\nAll classroom access will be immediately terminated and student profile locked.`)) {
+        try {
+          await DB.updateStudentBanState(studentId, true);
+          Toast.show(`Student "${name}" suspended globally.`, 'success');
+          await DB.syncAllData();
+          UI.renderModeration();
+          UI.reloadActiveChat();
+        } catch (err) {
+          Toast.show('Failed to suspend student.', 'danger');
+        }
+      }
+      return;
+    }
+  });
+
+  // EVENT DELEGATION: Toggling Draft state for lectures & courses, views hits tracker
+  document.addEventListener('click', async (e) => {
+    const btnToggleMat = e.target.closest('.btn-toggle-material-draft');
+    if (btnToggleMat) {
+      const id = btnToggleMat.getAttribute('data-id');
+      const targetState = btnToggleMat.getAttribute('data-draft') === 'true';
+      try {
+        await DB.toggleMaterialDraftState(id, targetState);
+        Toast.show(`Lecture visibility updated to: ${targetState ? 'Draft' : 'Published'}`, 'success');
+        await DB.syncAllData();
+        UI.renderMaterials();
+      } catch (err) {
+        // Handled
+      }
+      return;
+    }
+
+    const btnToggleCrs = e.target.closest('.btn-toggle-course-draft');
+    if (btnToggleCrs) {
+      const id = btnToggleCrs.getAttribute('data-id');
+      const targetState = btnToggleCrs.getAttribute('data-draft') === 'true';
+      try {
+        await DB.toggleCourseDraftState(id, targetState);
+        Toast.show(`Store course visibility updated to: ${targetState ? 'Draft' : 'Published'}`, 'success');
+        await DB.syncAllData();
+        UI.renderCourses();
+      } catch (err) {
+        // Handled
+      }
+      return;
+    }
+
+    // Material view hit tracking: increment view count when material link is clicked
+    const linkMat = e.target.closest('.text-link');
+    if (linkMat && AppState.activeView === 'view-materials') {
+      const row = linkMat.closest('tr');
+      const editBtn = row ? row.querySelector('.btn-edit-material') : null;
+      const matId = editBtn ? editBtn.getAttribute('data-id') : null;
+      if (matId) {
+        DB.incrementResourceViews(matId);
+      }
+    }
+  });
+
+  // KEYWORD CHAT FILTER BOX LISTENER
+  const chatSearch = document.getElementById('chat-search-input');
+  if (chatSearch) {
+    chatSearch.addEventListener('input', () => {
+      UI.reloadActiveChat();
+    });
+  }
+
+  // QUICK ACTIONS PANELS ROUTERS & CONTROLS
+  document.querySelectorAll('.btn-quick-action').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetView = btn.getAttribute('data-view');
+      if (targetView) {
+        UI.switchView(targetView);
+      }
+    });
+  });
+
+  const quickAddCourse = document.getElementById('btn-quick-add-course-trigger');
+  if (quickAddCourse) {
+    quickAddCourse.addEventListener('click', (e) => {
+      e.preventDefault();
+      UI.switchView('view-courses');
+      // Force switch to active catalog subtab and trigger open modal
+      const catalogTabBtn = document.querySelector('[data-subview="subview-store-catalog"]');
+      if (catalogTabBtn) catalogTabBtn.click();
+      const addBtn = document.getElementById('btn-open-create-course');
+      if (addBtn) addBtn.click();
+    });
+  }
+
+  const quickCreateBatch = document.getElementById('btn-quick-create-batch-trigger');
+  if (quickCreateBatch) {
+    quickCreateBatch.addEventListener('click', (e) => {
+      e.preventDefault();
+      UI.switchView('view-batches');
+      const addBatchBtn = document.getElementById('btn-open-create-batch');
+      if (addBatchBtn) addBatchBtn.click();
+    });
+  }
+
+  const quickSync = document.getElementById('btn-quick-sync-trigger');
+  if (quickSync) {
+    quickSync.addEventListener('click', (e) => {
+      e.preventDefault();
+      const refreshBtn = document.getElementById('btn-refresh-data');
+      if (refreshBtn) refreshBtn.click();
+    });
+  }
 
 });
