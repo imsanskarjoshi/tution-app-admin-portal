@@ -93,6 +93,10 @@ const MockDB = {
     } else {
       let currentUsers = JSON.parse(localStorage.getItem('hq_mock_users') || '[]');
       let updated = false;
+      if (!currentUsers.some(u => u.userId === 'admin_hq')) {
+        currentUsers.push({ userId: 'admin_hq', name: 'Sanskar Admin', email: 'sanskar@tuitionapp.com', role: 'admin', joinedAt: '2025-12-01T09:00:00Z', isBanned: false });
+        updated = true;
+      }
       if (!currentUsers.some(u => u.userId === 'std_madhav')) {
         currentUsers.push({ userId: 'std_madhav', name: 'Madhav Sharma', email: 'madhav@gmail.com', role: 'student', joinedAt: '2026-05-01T10:00:00Z', isBanned: false });
         updated = true;
@@ -258,13 +262,24 @@ const DB = {
     if (AppState.isMockMode) {
       // Mock Login
       const users = MockDB.get('users');
-      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === 'admin');
-      if (found) {
-        AppState.currentUser = found;
-        return found;
-      } else {
-        throw new Error('Admin account credentials not found or unauthorized role in Mock Mode.');
+      let found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === 'admin');
+      if (!found) {
+        // Auto-create a mock admin profile on any valid authentication input for dev convenience
+        const namePart = email.split('@')[0];
+        const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1) + ' Admin';
+        found = {
+          userId: 'admin_' + Date.now(),
+          name: formattedName,
+          email: email.toLowerCase(),
+          role: 'admin',
+          joinedAt: new Date().toISOString(),
+          isBanned: false
+        };
+        users.push(found);
+        MockDB.set('users', users);
       }
+      AppState.currentUser = found;
+      return found;
     } else {
       // Appwrite Login
       if (!appwriteClient && !initAppwrite()) {
