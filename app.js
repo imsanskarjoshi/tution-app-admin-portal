@@ -2323,7 +2323,8 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    const isMock = document.getElementById('mock-mode-toggle').checked;
+    const mockToggle = document.getElementById('mock-mode-toggle');
+    const isMock = mockToggle ? mockToggle.checked : true;
     
     const btn = document.getElementById('btn-login');
     btn.disabled = true;
