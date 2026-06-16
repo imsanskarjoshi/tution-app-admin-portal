@@ -253,7 +253,7 @@ const DB = {
     AppState.currentUser = null;
     localStorage.removeItem('hq_session_is_mock');
     localStorage.removeItem('hq_session_user');
-    document.body.classList.add('auth-mode');
+    document.body.className = 'auth-mode';
     Toast.show('Session closed successfully.', 'info');
   },
 
@@ -365,6 +365,31 @@ const DB = {
         AppwriteConfig.collections.batches,
         batchId
       );
+    }
+  },
+
+  // CRUD: Toggle Batch Access (Enable/Disable access for all students in the batch)
+  async toggleBatchAccess(batchId, targetState) {
+    if (AppState.isMockMode) {
+      const batches = MockDB.get('batches');
+      const idx = batches.findIndex(b => b.batchId === batchId);
+      if (idx !== -1) {
+        batches[idx].isAccessEnabled = targetState;
+        MockDB.set('batches', batches);
+      }
+    } else {
+      try {
+        await appwriteDatabases.updateDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.batches,
+          batchId,
+          { isAccessEnabled: targetState }
+        );
+      } catch (e) {
+        console.error('Failed to toggle live batch access', e);
+        Toast.show('Failed to toggle live batch access. Make sure the "isAccessEnabled" boolean attribute is added to the "batches" collection in Appwrite Console settings.', 'danger');
+        throw e;
+      }
     }
   },
 
@@ -860,16 +885,29 @@ const UI = {
     filtered.forEach(batch => {
       const row = document.createElement('tr');
       const timeStr = new Date(batch.createdAt).toLocaleDateString();
+      const isAccessEnabled = batch.isAccessEnabled !== false;
+      const statusBadge = isAccessEnabled 
+        ? `<span class="badge badge-success">Enabled</span>` 
+        : `<span class="badge badge-danger">Disabled</span>`;
+
       row.innerHTML = `
         <td><strong>${escapeHTML(batch.name)}</strong></td>
         <td><span class="badge badge-info">${escapeHTML(batch.subject)}</span></td>
         <td><code style="color:var(--secondary);font-size:14px;font-weight:700;">${escapeHTML(batch.code)}</code></td>
         <td><span style="font-family:monospace;color:var(--text-secondary);">${escapeHTML(batch.teacherId)}</span></td>
         <td>${timeStr}</td>
+        <td>${statusBadge}</td>
         <td>
           <div class="action-row-buttons">
             <button class="btn btn-secondary btn-mini btn-copy-code" data-code="${escapeHTML(batch.code)}">
               <i class="fa-solid fa-copy"></i> Join Link
+            </button>
+            <button class="btn ${isAccessEnabled ? 'btn-danger' : 'btn-success'} btn-mini btn-toggle-batch-access" 
+                    data-id="${batch.batchId}" 
+                    data-enabled="${isAccessEnabled ? 'false' : 'true'}"
+                    title="${isAccessEnabled ? 'Suspend access for all students' : 'Restore access for all students'}">
+              <i class="fa-solid ${isAccessEnabled ? 'fa-ban' : 'fa-circle-check'}"></i> 
+              ${isAccessEnabled ? 'Suspend' : 'Resume'}
             </button>
             <button class="btn btn-primary btn-mini btn-edit-batch" 
                     data-id="${batch.batchId}" 
@@ -1291,7 +1329,17 @@ async function checkActiveSession() {
       
       await restoreSessionUI();
       return;
-    } catch (_) {}
+    } catch (_) {
+      localStorage.removeItem('hq_session_is_mock');
+      localStorage.removeItem('hq_session_user');
+      document.body.className = 'auth-mode';
+    }
+  } else if (wasMock) {
+    // Edge case: is_mock is true but user JSON is missing
+    localStorage.removeItem('hq_session_is_mock');
+    localStorage.removeItem('hq_session_user');
+    document.body.className = 'auth-mode';
+    return;
   }
 
   // Live Appwrite session check
@@ -1323,10 +1371,20 @@ async function checkActiveSession() {
         await restoreSessionUI();
       } else {
         await appwriteAccount.deleteSession('current');
+        localStorage.removeItem('hq_session_is_mock');
+        localStorage.removeItem('hq_session_user');
+        document.body.className = 'auth-mode';
       }
     } catch (err) {
       console.log('No active Appwrite session found on startup.');
+      localStorage.removeItem('hq_session_is_mock');
+      localStorage.removeItem('hq_session_user');
+      document.body.className = 'auth-mode';
     }
+  } else {
+    localStorage.removeItem('hq_session_is_mock');
+    localStorage.removeItem('hq_session_user');
+    document.body.className = 'auth-mode';
   }
 }
 
@@ -1354,6 +1412,7 @@ async function restoreSessionUI() {
   
   // Transition out of auth screen
   document.body.classList.remove('auth-mode');
+  document.body.classList.remove('loading-mode');
   
   // Default view
   UI.switchView('view-dashboard');
@@ -1416,6 +1475,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Transition out of auth screen
       document.body.classList.remove('auth-mode');
+      document.body.classList.remove('loading-mode');
       
       // Default view
       UI.switchView('view-dashboard');
@@ -1440,8 +1500,25 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const viewId = item.getAttribute('data-view');
       UI.switchView(viewId);
+      document.body.classList.remove('sidebar-open');
     });
   });
+
+  // Mobile Sidebar Drawer Toggle Events
+  const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+  if (btnToggleSidebar) {
+    btnToggleSidebar.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-open');
+    });
+  }
+
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-open');
+    });
+  }
+
 
   // Global Refresh Action
   document.getElementById('btn-refresh-data').addEventListener('click', async () => {
@@ -1545,6 +1622,33 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.renderBatches();
       } catch (err) {
         Toast.show('Failed to delete batch.', 'danger');
+      }
+    }
+  });
+
+  // Toggle Batch Access Action
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-toggle-batch-access');
+    if (!btn) return;
+
+    const id = btn.getAttribute('data-id');
+    const targetState = btn.getAttribute('data-enabled') === 'true';
+    const actionName = targetState ? 'Resume' : 'Suspend';
+
+    if (confirm(`Are you sure you want to ${actionName.toLowerCase()} student access for this batch?`)) {
+      btn.disabled = true;
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+      try {
+        await DB.toggleBatchAccess(id, targetState);
+        Toast.show(`Batch access status updated to: ${targetState ? 'Enabled' : 'Disabled'}`, 'success');
+        await DB.syncAllData();
+        UI.renderBatches();
+      } catch (err) {
+        // Error toast already shown in DB method
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
       }
     }
   });

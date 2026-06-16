@@ -17,7 +17,27 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="auth-mode">
+<body class="loading-mode">
+  <script>
+    // Synchronous check of session indicators to prevent FOUC (flash of unauthenticated content)
+    if (localStorage.getItem('hq_session_is_mock') === null) {
+      document.body.className = 'auth-mode';
+    } else {
+      document.body.className = 'loading-mode';
+    }
+  </script>
+
+  <!-- ================= SPLASH LOADING VIEW ================= -->
+  <div id="splash-screen" class="splash-wrapper">
+    <div class="splash-card">
+      <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+      <h2>Educator Hub</h2>
+      <p>Verifying secure session credentials...</p>
+      <div class="splash-spinner">
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= AUTH VIEW ================= -->
   <div id="login-container" class="login-wrapper">
@@ -72,6 +92,7 @@
 
   <!-- ================= DASHBOARD LAYOUT ================= -->
   <div id="dashboard-layout" class="dashboard-wrapper">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -150,6 +171,9 @@
     <main class="content-canvas">
       <!-- Top Header -->
       <header class="topbar">
+        <button class="btn btn-secondary btn-icon" id="btn-toggle-sidebar" style="display: none;" title="Toggle Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
         <div class="topbar-search">
           <i class="fa-solid fa-magnifying-glass"></i>
           <input type="text" id="global-search" placeholder="Quick search dashboard records...">
@@ -281,6 +305,7 @@
                 <th>Enrollment Code</th>
                 <th>Teacher ID</th>
                 <th>Created Date</th>
+                <th>Access Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -419,15 +444,15 @@
 
         <div class="moderation-split-panel">
           <!-- Notice Composer Side -->
-          <div class="mod-batches-list bg-glass" style="width: 380px; padding: 24px; height: 100%; overflow-y: auto;">
-            <div class="panel-header" style="padding-left:0; padding-right:0;">
+          <div class="notice-composer bg-glass">
+            <div class="panel-header">
               <h4>Draft Broadcast</h4>
             </div>
-            <form id="form-broadcast-notice" style="margin-top: 15px;">
+            <form id="form-broadcast-notice">
               <input type="hidden" id="edit-notice-id">
               <div class="form-group">
                 <label for="notice-batch">Classroom Batch</label>
-                <select id="notice-batch" class="form-control" required style="width: 100%;">
+                <select id="notice-batch" class="form-control" required>
                   <!-- Populated dynamically -->
                 </select>
               </div>
@@ -439,11 +464,11 @@
                 <label for="notice-content">Content Message</label>
                 <textarea id="notice-content" class="form-control" rows="6" required placeholder="Compose your notice broadcast details here..."></textarea>
               </div>
-              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">
+              <button type="submit" class="btn btn-primary btn-block">
                 <i class="fa-solid fa-paper-plane"></i>
                 <span id="btn-broadcast-text">Broadcast Notice</span>
               </button>
-              <button type="button" class="btn btn-secondary btn-block" id="btn-cancel-notice-edit" style="margin-top: 5px; display: none;">
+              <button type="button" class="btn btn-secondary btn-block" id="btn-cancel-notice-edit" style="display: none;">
                 Cancel Edit
               </button>
             </form>
@@ -451,10 +476,10 @@
 
           <!-- Notices History Side -->
           <div class="mod-chat-viewport bg-glass">
-            <div class="panel-header" style="padding: 14px 20px;">
+            <div class="panel-header">
               <h4>Broadcast History Log</h4>
             </div>
-            <div style="overflow-y: auto; flex-grow: 1;">
+            <div class="notices-table-wrapper">
               <table class="data-table" id="notices-table">
                 <thead>
                   <tr>
