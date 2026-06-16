@@ -68,16 +68,36 @@ const MockDB = {
         { userId: 'std_1', name: 'John Doe', email: 'john.doe@gmail.com', role: 'student', joinedAt: '2026-01-20T11:00:00Z', isBanned: false },
         { userId: 'std_2', name: 'Jane Smith', email: 'jane.smith@gmail.com', role: 'student', joinedAt: '2026-02-15T09:30:00Z', isBanned: false },
         { userId: 'std_3', name: 'Robert Chen', email: 'robert.chen@gmail.com', role: 'student', joinedAt: '2026-03-10T15:00:00Z', isBanned: true },
-        { userId: 'std_4', name: 'Emily Davis', email: 'emily.davis@gmail.com', role: 'student', joinedAt: '2026-04-05T10:00:00Z', isBanned: false }
+        { userId: 'std_4', name: 'Emily Davis', email: 'emily.davis@gmail.com', role: 'student', joinedAt: '2026-04-05T10:00:00Z', isBanned: false },
+        { userId: 'std_madhav', name: 'Madhav Sharma', email: 'madhav@gmail.com', role: 'student', joinedAt: '2026-05-01T10:00:00Z', isBanned: false }
       ]));
+    } else {
+      // Ensure Madhav exists even if hq_mock_users is already in localStorage
+      let currentUsers = JSON.parse(localStorage.getItem('hq_mock_users') || '[]');
+      if (!currentUsers.some(u => u.userId === 'std_madhav')) {
+        currentUsers.push({ userId: 'std_madhav', name: 'Madhav Sharma', email: 'madhav@gmail.com', role: 'student', joinedAt: '2026-05-01T10:00:00Z', isBanned: false });
+        localStorage.setItem('hq_mock_users', JSON.stringify(currentUsers));
+      }
     }
     if (!localStorage.getItem('hq_mock_enrollments')) {
       localStorage.setItem('hq_mock_enrollments', JSON.stringify([
         { id: 'e_1', batchId: 'b_1', studentId: 'std_1', joinedAt: '2026-01-21T10:00:00Z', subscriptionExpiresAt: '2026-09-01T23:59:59Z', subscriptionPlan: '3_months' },
         { id: 'e_2', batchId: 'b_1', studentId: 'std_2', joinedAt: '2026-02-16T12:00:00Z', subscriptionExpiresAt: '2026-05-15T23:59:59Z', subscriptionPlan: 'expired' },
         { id: 'e_3', batchId: 'b_2', studentId: 'std_3', joinedAt: '2026-03-11T16:00:00Z', subscriptionExpiresAt: '2026-12-01T23:59:59Z', subscriptionPlan: '6_months' },
-        { id: 'e_4', batchId: 'b_3', studentId: 'std_4', joinedAt: '2026-04-06T11:00:00Z', subscriptionExpiresAt: '2026-06-10T23:59:59Z', subscriptionPlan: 'expired' }
+        { id: 'e_4', batchId: 'b_3', studentId: 'std_4', joinedAt: '2026-04-06T11:00:00Z', subscriptionExpiresAt: '2026-06-10T23:59:59Z', subscriptionPlan: 'expired' },
+        { id: 'e_madhav_1', batchId: 'b_1', studentId: 'std_madhav', joinedAt: '2026-05-01T10:15:00Z', subscriptionExpiresAt: '2026-09-01T23:59:59Z', subscriptionPlan: '3_months' },
+        { id: 'e_madhav_2', batchId: 'b_2', studentId: 'std_madhav', joinedAt: '2026-05-01T10:20:00Z', subscriptionExpiresAt: '2026-06-01T23:59:59Z', subscriptionPlan: 'expired' }
       ]));
+    } else {
+      // Ensure Madhav's enrollments exist even if hq_mock_enrollments is already in localStorage
+      let currentEnrollments = JSON.parse(localStorage.getItem('hq_mock_enrollments') || '[]');
+      if (!currentEnrollments.some(e => e.studentId === 'std_madhav')) {
+        currentEnrollments.push(
+          { id: 'e_madhav_1', batchId: 'b_1', studentId: 'std_madhav', joinedAt: '2026-05-01T10:15:00Z', subscriptionExpiresAt: '2026-09-01T23:59:59Z', subscriptionPlan: '3_months' },
+          { id: 'e_madhav_2', batchId: 'b_2', studentId: 'std_madhav', joinedAt: '2026-05-01T10:20:00Z', subscriptionExpiresAt: '2026-06-01T23:59:59Z', subscriptionPlan: 'expired' }
+        );
+        localStorage.setItem('hq_mock_enrollments', JSON.stringify(currentEnrollments));
+      }
     }
     if (!localStorage.getItem('hq_mock_materials')) {
       localStorage.setItem('hq_mock_materials', JSON.stringify([
