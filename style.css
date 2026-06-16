@@ -719,7 +719,7 @@ body:not(.auth-mode):not(.loading-mode) #dashboard-layout { display: flex; }
 /* Metrics Grid */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
   margin-bottom: 30px;
 }
@@ -743,6 +743,7 @@ body:not(.auth-mode):not(.loading-mode) #dashboard-layout { display: flex; }
 
 .color-indigo { background-color: var(--primary-light); color: var(--primary); }
 .color-cyan { background-color: var(--secondary-light); color: var(--secondary); }
+.color-rose { background-color: var(--danger-light); color: var(--danger); }
 .color-amber { background-color: var(--warning-light); color: var(--warning); }
 .color-green { background-color: var(--success-light); color: var(--success); }
 

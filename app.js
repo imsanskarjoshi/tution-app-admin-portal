@@ -1277,13 +1277,14 @@ const UI = {
   renderDashboard() {
     // Stat numbers
     document.getElementById('stat-students').innerText = AppState.students.length;
+    document.getElementById('stat-teachers').innerText = AppState.teachers.length;
     document.getElementById('stat-batches').innerText = AppState.batches.length;
     document.getElementById('stat-materials').innerText = AppState.materials.length;
     
     // Revenue calculator: base batch count revenue + store course mock sum
     const totalEnrollmentsCount = AppState.enrollments.filter(e => e.subscriptionPlan !== 'expired').length;
     const estimatedRev = (totalEnrollmentsCount * 25) + AppState.courses.reduce((sum, c) => sum + (c.price * 3), 0);
-    document.getElementById('stat-revenue').innerText = `$${estimatedRev.toFixed(2)}`;
+    document.getElementById('stat-revenue').innerText = `INR ${estimatedRev.toFixed(2)}`;
 
     // Draw Dashboard Charts
     UI.drawEnrollmentChart();
@@ -1326,7 +1327,7 @@ const UI = {
           createdAt: m.createdAt,
           fileType: m.fileType,
           isDraft: m.isDraft,
-          publisher: 'Educator Console'
+          publisher: 'RK Tutorial Admin'
         });
       });
 
@@ -1408,7 +1409,7 @@ const UI = {
             <td>Store Checkout</td>
             <td>${escapeHTML(item.publisher)}</td>
             <td>${timeStr}</td>
-            <td><span class="badge badge-success">Paid ($${item.amount.toFixed(2)})</span></td>
+            <td><span class="badge badge-success">Paid (INR ${item.amount.toFixed(2)})</span></td>
           `;
         }
         tbody.appendChild(row);
@@ -2019,7 +2020,7 @@ const UI = {
           
           card.innerHTML = `
             <div class="course-banner" style="background-image: url('${escapeHTML(course.coverImage)}')">
-              <span class="course-price-badge">$${course.price.toFixed(2)}</span>
+              <span class="course-price-badge">INR ${course.price.toFixed(2)}</span>
             </div>
             <div class="course-info">
               <h4 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
@@ -2079,7 +2080,7 @@ const UI = {
             <td><strong>${escapeHTML(tx.studentName)}</strong></td>
             <td>${escapeHTML(tx.studentEmail)}</td>
             <td>${escapeHTML(tx.courseTitle)}</td>
-            <td><span class="text-success" style="font-weight:700;">$${tx.amount.toFixed(2)}</span></td>
+            <td><span class="text-success" style="font-weight:700;">INR ${tx.amount.toFixed(2)}</span></td>
             <td><span class="badge badge-info">${escapeHTML(tx.promoApplied || 'NONE')}</span></td>
             <td>${timeStr}</td>
           `;
