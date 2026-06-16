@@ -16,6 +16,7 @@ const AppState = {
   // Cache storage lists
   batches: [],
   students: [],
+  teachers: [],
   materials: [],
   chats: [],
   courses: [],
@@ -58,9 +59,25 @@ const MockDB = {
     if (!localStorage.getItem('hq_mock_batches')) {
       localStorage.setItem('hq_mock_batches', JSON.stringify([
         { batchId: 'b_1', name: 'Physics Honors 2026', subject: 'Physics', code: 'PHY101', teacherId: 'admin_hq', teacherName: 'Sanskar Admin', createdAt: '2026-01-15T10:00:00Z', description: 'Advanced electromagnetic theory and kinematics.', schedule: 'Mon, Wed, Fri - 4:00 PM', isAccessEnabled: true },
-        { batchId: 'b_2', name: 'Calculus Advanced', subject: 'Mathematics', code: 'MAT202', teacherId: 'admin_hq', teacherName: 'Prof. Verma', createdAt: '2026-02-10T12:00:00Z', description: 'Differential equations, integrations, and limits.', schedule: 'Tue, Thu - 5:00 PM', isAccessEnabled: true },
-        { batchId: 'b_3', name: 'Organic Chemistry Fundamentals', subject: 'Chemistry', code: 'CHE303', teacherId: 'admin_hq', teacherName: 'Dr. Mehta', createdAt: '2026-03-01T14:30:00Z', description: 'Hydrocarbon reactions, IUPAC naming, and synthesis.', schedule: 'Sat, Sun - 10:00 AM', isAccessEnabled: false }
+        { batchId: 'b_2', name: 'Calculus Advanced', subject: 'Mathematics', code: 'MAT202', teacherId: 't_1', teacherName: 'Prof. Verma', createdAt: '2026-02-10T12:00:00Z', description: 'Differential equations, integrations, and limits.', schedule: 'Tue, Thu - 5:00 PM', isAccessEnabled: true },
+        { batchId: 'b_3', name: 'Organic Chemistry Fundamentals', subject: 'Chemistry', code: 'CHE303', teacherId: 't_2', teacherName: 'Dr. Mehta', createdAt: '2026-03-01T14:30:00Z', description: 'Hydrocarbon reactions, IUPAC naming, and synthesis.', schedule: 'Sat, Sun - 10:00 AM', isAccessEnabled: false }
       ]));
+    } else {
+      let currentBatches = JSON.parse(localStorage.getItem('hq_mock_batches') || '[]');
+      let updated = false;
+      const b2 = currentBatches.find(b => b.batchId === 'b_2');
+      if (b2 && b2.teacherId === 'admin_hq') {
+        b2.teacherId = 't_1';
+        updated = true;
+      }
+      const b3 = currentBatches.find(b => b.batchId === 'b_3');
+      if (b3 && b3.teacherId === 'admin_hq') {
+        b3.teacherId = 't_2';
+        updated = true;
+      }
+      if (updated) {
+        localStorage.setItem('hq_mock_batches', JSON.stringify(currentBatches));
+      }
     }
     if (!localStorage.getItem('hq_mock_users')) {
       localStorage.setItem('hq_mock_users', JSON.stringify([
@@ -69,13 +86,26 @@ const MockDB = {
         { userId: 'std_2', name: 'Jane Smith', email: 'jane.smith@gmail.com', role: 'student', joinedAt: '2026-02-15T09:30:00Z', isBanned: false },
         { userId: 'std_3', name: 'Robert Chen', email: 'robert.chen@gmail.com', role: 'student', joinedAt: '2026-03-10T15:00:00Z', isBanned: true },
         { userId: 'std_4', name: 'Emily Davis', email: 'emily.davis@gmail.com', role: 'student', joinedAt: '2026-04-05T10:00:00Z', isBanned: false },
-        { userId: 'std_madhav', name: 'Madhav Sharma', email: 'madhav@gmail.com', role: 'student', joinedAt: '2026-05-01T10:00:00Z', isBanned: false }
+        { userId: 'std_madhav', name: 'Madhav Sharma', email: 'madhav@gmail.com', role: 'student', joinedAt: '2026-05-01T10:00:00Z', isBanned: false },
+        { userId: 't_1', name: 'Prof. Verma', email: 'verma@tuitionapp.com', role: 'teacher', joinedAt: '2026-01-15T10:00:00Z', isBanned: false },
+        { userId: 't_2', name: 'Dr. Mehta', email: 'mehta@tuitionapp.com', role: 'teacher', joinedAt: '2026-02-10T12:00:00Z', isBanned: false }
       ]));
     } else {
-      // Ensure Madhav exists even if hq_mock_users is already in localStorage
       let currentUsers = JSON.parse(localStorage.getItem('hq_mock_users') || '[]');
+      let updated = false;
       if (!currentUsers.some(u => u.userId === 'std_madhav')) {
         currentUsers.push({ userId: 'std_madhav', name: 'Madhav Sharma', email: 'madhav@gmail.com', role: 'student', joinedAt: '2026-05-01T10:00:00Z', isBanned: false });
+        updated = true;
+      }
+      if (!currentUsers.some(u => u.userId === 't_1')) {
+        currentUsers.push({ userId: 't_1', name: 'Prof. Verma', email: 'verma@tuitionapp.com', role: 'teacher', joinedAt: '2026-01-15T10:00:00Z', isBanned: false });
+        updated = true;
+      }
+      if (!currentUsers.some(u => u.userId === 't_2')) {
+        currentUsers.push({ userId: 't_2', name: 'Dr. Mehta', email: 'mehta@tuitionapp.com', role: 'teacher', joinedAt: '2026-02-10T12:00:00Z', isBanned: false });
+        updated = true;
+      }
+      if (updated) {
         localStorage.setItem('hq_mock_users', JSON.stringify(currentUsers));
       }
     }
@@ -299,6 +329,7 @@ const DB = {
     if (AppState.isMockMode) {
       AppState.batches = MockDB.get('batches');
       AppState.students = MockDB.get('users').filter(u => u.role === 'student');
+      AppState.teachers = MockDB.get('users').filter(u => u.role === 'teacher');
       AppState.materials = MockDB.get('materials');
       AppState.chats = MockDB.get('chats');
       AppState.courses = MockDB.get('courses');
@@ -311,6 +342,7 @@ const DB = {
       const promises = [
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.batches),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.users, [Query.equal('role', 'student')]),
+        appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.users, [Query.equal('role', 'teacher')]),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.materials),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.chats),
         appwriteDatabases.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collections.courses),
@@ -333,12 +365,13 @@ const DB = {
       promises.push(txPromise, cpPromise);
 
       const [
-        batchesDoc, usersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc, transactionsDoc, couponsDoc
+        batchesDoc, studentsDoc, teachersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc, transactionsDoc, couponsDoc
       ] = await Promise.all(promises);
 
       // Map doc entries
       AppState.batches = batchesDoc.documents.map(d => ({ batchId: d.$id, ...d }));
-      AppState.students = usersDoc.documents.map(d => ({ userId: d.$id, ...d }));
+      AppState.students = studentsDoc.documents.map(d => ({ userId: d.$id, ...d }));
+      AppState.teachers = teachersDoc.documents.map(d => ({ userId: d.$id, ...d }));
       AppState.materials = materialsDoc.documents.map(d => ({ materialId: d.$id, ...d }));
       AppState.chats = chatsDoc.documents.map(d => ({ messageId: d.$id, ...d }));
       AppState.courses = coursesDoc.documents.map(d => ({ courseId: d.$id, ...d }));
@@ -522,6 +555,239 @@ const DB = {
             subscriptionPlan: subPlan
           }
         );
+      }
+    }
+  },
+
+  // CRUD: Create Student Profile
+  async createStudent(name, email, password) {
+    if (AppState.isMockMode) {
+      const users = MockDB.get('users');
+      if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        throw new Error('A student with this email address already exists.');
+      }
+      const newStudent = {
+        userId: 'std_' + Date.now(),
+        name,
+        email,
+        role: 'student',
+        joinedAt: new Date().toISOString(),
+        isBanned: false
+      };
+      users.push(newStudent);
+      MockDB.set('users', users);
+      return newStudent;
+    } else {
+      const id = ID.unique();
+      const payload = {
+        name,
+        email,
+        role: 'student',
+        joinedAt: new Date().toISOString(),
+        isBanned: false
+      };
+      return await appwriteDatabases.createDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        id,
+        payload
+      );
+    }
+  },
+
+  // CRUD: Update Student Profile (Name and Email)
+  async updateStudentProfile(studentId, name, email) {
+    if (AppState.isMockMode) {
+      const users = MockDB.get('users');
+      const idx = users.findIndex(u => u.userId === studentId);
+      if (idx !== -1) {
+        users[idx].name = name;
+        users[idx].email = email;
+        MockDB.set('users', users);
+      }
+    } else {
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        studentId,
+        { name, email }
+      );
+    }
+  },
+
+  // CRUD: Wipe Student Profile and Enrollments
+  async deleteStudent(studentId) {
+    if (AppState.isMockMode) {
+      let users = MockDB.get('users');
+      users = users.filter(u => u.userId !== studentId);
+      MockDB.set('users', users);
+
+      let enrollments = MockDB.get('enrollments');
+      enrollments = enrollments.filter(e => e.studentId !== studentId);
+      MockDB.set('enrollments', enrollments);
+    } else {
+      await appwriteDatabases.deleteDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        studentId
+      );
+
+      try {
+        const queryRes = await appwriteDatabases.listDocuments(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.enrollments,
+          [Query.equal('studentId', studentId)]
+        );
+        for (const doc of queryRes.documents) {
+          await appwriteDatabases.deleteDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.enrollments,
+            doc.$id
+          );
+        }
+      } catch (e) {
+        console.warn('Wiping enrollments failed or collection is empty', e);
+      }
+    }
+  },
+
+  // CRUD: Create Teacher Profile
+  async createTeacher(name, email, password) {
+    if (AppState.isMockMode) {
+      const users = MockDB.get('users');
+      if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        throw new Error('An educator with this email address already exists.');
+      }
+      const newTeacher = {
+        userId: 't_' + Date.now(),
+        name,
+        email,
+        role: 'teacher',
+        joinedAt: new Date().toISOString(),
+        isBanned: false
+      };
+      users.push(newTeacher);
+      MockDB.set('users', users);
+      return newTeacher;
+    } else {
+      const id = ID.unique();
+      const payload = {
+        name,
+        email,
+        role: 'teacher',
+        joinedAt: new Date().toISOString(),
+        isBanned: false
+      };
+      return await appwriteDatabases.createDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        id,
+        payload
+      );
+    }
+  },
+
+  // CRUD: Update Teacher Profile & Status
+  async updateTeacher(teacherId, name, email, isBanned) {
+    if (AppState.isMockMode) {
+      const users = MockDB.get('users');
+      const idx = users.findIndex(u => u.userId === teacherId);
+      if (idx !== -1) {
+        users[idx].name = name;
+        users[idx].email = email;
+        users[idx].isBanned = isBanned;
+        MockDB.set('users', users);
+
+        let batches = MockDB.get('batches');
+        let updated = false;
+        batches.forEach(b => {
+          if (b.teacherId === teacherId) {
+            b.teacherName = name;
+            updated = true;
+          }
+        });
+        if (updated) {
+          MockDB.set('batches', batches);
+        }
+      }
+    } else {
+      const payload = {
+        name,
+        email,
+        isBanned
+      };
+      await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        teacherId,
+        payload
+      );
+
+      try {
+        const queryRes = await appwriteDatabases.listDocuments(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.batches,
+          [Query.equal('teacherId', teacherId)]
+        );
+        for (const doc of queryRes.documents) {
+          await appwriteDatabases.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.batches,
+            doc.$id,
+            { teacherName: name }
+          );
+        }
+      } catch (e) {
+        console.warn('Cascading teacherName updates failed', e);
+      }
+    }
+  },
+
+  // CRUD: Delete Teacher Profile (Cascades batches taught by them to default TBD values)
+  async deleteTeacher(teacherId) {
+    if (AppState.isMockMode) {
+      let users = MockDB.get('users');
+      users = users.filter(u => u.userId !== teacherId);
+      MockDB.set('users', users);
+
+      let batches = MockDB.get('batches');
+      let updated = false;
+      batches.forEach(b => {
+        if (b.teacherId === teacherId) {
+          b.teacherId = 'admin_hq';
+          b.teacherName = 'TBD';
+          updated = true;
+        }
+      });
+      if (updated) {
+        MockDB.set('batches', batches);
+      }
+    } else {
+      await appwriteDatabases.deleteDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        teacherId
+      );
+
+      try {
+        const queryRes = await appwriteDatabases.listDocuments(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.batches,
+          [Query.equal('teacherId', teacherId)]
+        );
+        for (const doc of queryRes.documents) {
+          await appwriteDatabases.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.batches,
+            doc.$id,
+            {
+              teacherId: 'admin_hq',
+              teacherName: 'TBD'
+            }
+          );
+        }
+      } catch (e) {
+        console.warn('Cascading teacher deletion in batches failed', e);
       }
     }
   },
@@ -1001,6 +1267,9 @@ const UI = {
       case 'view-courses':
         UI.renderCourses();
         break;
+      case 'view-teachers':
+        UI.renderTeachers();
+        break;
     }
   },
 
@@ -1382,7 +1651,7 @@ const UI = {
                       data-expiry=""
                       data-banned="${student.isBanned ? 'true' : 'false'}"
                       data-enabled="false">
-                <i class="fa-solid fa-user-shield"></i> Update Plan
+                <i class="fa-solid fa-user-gear"></i> Edit / Plan
               </button>
             </div>
           </td>
@@ -1428,13 +1697,75 @@ const UI = {
                       data-expiry="${enroll.subscriptionExpiresAt.split('T')[0]}"
                       data-banned="${student.isBanned ? 'true' : 'false'}"
                       data-enabled="${!(isExpired || plan === 'expired')}">
-                <i class="fa-solid fa-user-shield"></i> Update Plan
+                <i class="fa-solid fa-user-gear"></i> Edit / Plan
               </button>
             </div>
           </td>
         `;
         tbody.appendChild(row);
       });
+    });
+  },
+
+  renderTeachers() {
+    const tbody = document.querySelector('#teachers-table tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const searchVal = document.getElementById('search-teachers').value.toLowerCase();
+
+    const filtered = AppState.teachers.filter(teacher => {
+      return teacher.name.toLowerCase().includes(searchVal) || teacher.email.toLowerCase().includes(searchVal);
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;" class="text-muted">No teachers found.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach(teacher => {
+      // Find classes taught
+      const teacherBatches = AppState.batches.filter(b => b.teacherId === teacher.userId);
+      const classesHtml = teacherBatches.length > 0
+        ? teacherBatches.map(b => `<span class="tag-badge" style="background:var(--primary-light);color:var(--primary);border:1px solid rgba(99, 102, 241, 0.3); font-size:10px; margin-right:4px;">${escapeHTML(b.name)}</span>`).join('')
+        : `<span class="badge badge-warning">No Classes Assigned</span>`;
+
+      const accountStatusBadge = teacher.isBanned 
+        ? `<span class="badge badge-danger-glow"><i class="fa-solid fa-user-slash"></i> Suspended</span>` 
+        : `<span class="badge badge-success"><i class="fa-solid fa-user-check"></i> Active</span>`;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>
+          <div class="student-row-profile">
+            <div class="avatar-circle" style="background:linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);">${teacher.name.substring(0, 1).toUpperCase()}</div>
+            <div class="info">
+              <span class="name">${escapeHTML(teacher.name)}</span>
+              <span class="joined">Joined: ${new Date(teacher.joinedAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </td>
+        <td>${escapeHTML(teacher.email)}</td>
+        <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${classesHtml}</div></td>
+        <td>${accountStatusBadge}</td>
+        <td>
+          <div class="action-row-buttons">
+            <button class="btn btn-primary btn-mini btn-edit-teacher" 
+                    data-id="${teacher.userId}" 
+                    data-name="${escapeHTML(teacher.name)}" 
+                    data-email="${escapeHTML(teacher.email)}"
+                    data-banned="${teacher.isBanned ? 'true' : 'false'}">
+              <i class="fa-solid fa-pen"></i> Edit Profile
+            </button>
+            <button class="btn btn-danger btn-mini btn-delete-teacher" 
+                    data-id="${teacher.userId}" 
+                    data-name="${escapeHTML(teacher.name)}">
+              <i class="fa-solid fa-trash-can"></i> WIPE
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(row);
     });
   },
 
@@ -2116,7 +2447,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchMap = {
       'view-batches': 'search-batches',
       'view-students': 'search-students',
-      'view-materials': 'search-materials'
+      'view-materials': 'search-materials',
+      'view-teachers': 'search-teachers'
     };
     const targetInputId = searchMap[AppState.activeView];
     if (targetInputId) {
@@ -2247,12 +2579,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn) return;
 
     document.getElementById('edit-student-id').value = btn.getAttribute('data-student-id');
-    document.getElementById('edit-student-batch-id').value = btn.getAttribute('data-batch-id');
-    document.getElementById('edit-student-name').innerText = btn.getAttribute('data-name');
-    document.getElementById('edit-student-email').innerText = btn.getAttribute('data-email');
+    document.getElementById('edit-student-batch-id').value = btn.getAttribute('data-batch-id') || '';
+    document.getElementById('edit-student-summary-name').innerText = btn.getAttribute('data-name');
+    document.getElementById('edit-student-summary-email').innerText = btn.getAttribute('data-email');
     document.getElementById('edit-student-avatar').innerText = btn.getAttribute('data-name').substring(0, 1).toUpperCase();
     
-    const plan = btn.getAttribute('data-plan');
+    // Set editable inputs
+    document.getElementById('edit-student-name-input').value = btn.getAttribute('data-name');
+    document.getElementById('edit-student-email-input').value = btn.getAttribute('data-email');
+    
+    const plan = btn.getAttribute('data-plan') || 'expired';
     const expiry = btn.getAttribute('data-expiry') || '';
     const enabled = btn.getAttribute('data-enabled') === 'true';
     const banned = btn.getAttribute('data-banned') === 'true';
@@ -2269,23 +2605,25 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const studentId = document.getElementById('edit-student-id').value;
     const batchId = document.getElementById('edit-student-batch-id').value;
+    const name = document.getElementById('edit-student-name-input').value.trim();
+    const email = document.getElementById('edit-student-email-input').value.trim();
     const plan = document.getElementById('edit-student-plan').value;
     const expiry = document.getElementById('edit-student-expiry').value;
     const enabled = document.getElementById('edit-student-enabled').checked;
     const banned = document.getElementById('edit-student-banned').checked;
 
     try {
-      // If batchId is empty, student doesn't have enrollment yet but we can create one or skip enrollment update
+      await DB.updateStudentProfile(studentId, name, email);
       if (batchId) {
         await DB.updateStudentAccess(batchId, studentId, enabled, plan, expiry);
       }
       await DB.updateStudentBanState(studentId, banned);
-      Toast.show('Student subscription permissions and status updated.', 'success');
+      Toast.show('Student profile and subscription status updated.', 'success');
       document.getElementById('modal-edit-student').classList.remove('active');
       await DB.syncAllData();
       UI.renderStudents();
     } catch (err) {
-      Toast.show('Failed to modify credentials.', 'danger');
+      Toast.show('Failed to modify student profile.', 'danger');
     }
   });
 
@@ -2827,5 +3165,188 @@ document.addEventListener('DOMContentLoaded', () => {
       if (refreshBtn) refreshBtn.click();
     });
   }
+
+  // --- NEW STUDENT & TEACHER CRUD EVENT BINDINGS ---
+
+  // Search filter list binding for teachers
+  const searchTeachersEl = document.getElementById('search-teachers');
+  if (searchTeachersEl) {
+    searchTeachersEl.addEventListener('input', () => UI.renderTeachers());
+  }
+
+  // Modal: Open Create Student
+  const btnOpenCreateStudent = document.getElementById('btn-open-create-student');
+  if (btnOpenCreateStudent) {
+    btnOpenCreateStudent.addEventListener('click', () => {
+      const form = document.getElementById('form-create-student');
+      if (form) form.reset();
+      document.getElementById('modal-create-student').classList.add('active');
+    });
+  }
+
+  // Form: Create Student Submit
+  const formCreateStudent = document.getElementById('form-create-student');
+  if (formCreateStudent) {
+    formCreateStudent.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('student-create-name').value.trim();
+      const email = document.getElementById('student-create-email').value.trim();
+      const password = document.getElementById('student-create-password').value;
+
+      try {
+        await DB.createStudent(name, email, password);
+        Toast.show(`Student profile for "${name}" created successfully.`, 'success');
+        document.getElementById('modal-create-student').classList.remove('active');
+        await DB.syncAllData();
+        UI.renderStudents();
+      } catch (err) {
+        Toast.show(err.message || 'Failed to create student profile.', 'danger');
+      }
+    });
+  }
+
+  // Action: Wipe Student Profile (within edit modal)
+  const btnWipeStudent = document.getElementById('btn-wipe-student');
+  if (btnWipeStudent) {
+    btnWipeStudent.addEventListener('click', async () => {
+      const studentId = document.getElementById('edit-student-id').value;
+      const name = document.getElementById('edit-student-summary-name').innerText;
+      if (confirm(`WIPE STUDENT PROFILE?\n\nAre you sure you want to permanently delete student "${name}"? This will also wipe all their batch enrollments from the system.`)) {
+        try {
+          await DB.deleteStudent(studentId);
+          Toast.show(`Student "${name}" profile and enrollments wiped.`, 'success');
+          document.getElementById('modal-edit-student').classList.remove('active');
+          await DB.syncAllData();
+          UI.renderStudents();
+        } catch (err) {
+          Toast.show('Failed to wipe student profile.', 'danger');
+        }
+      }
+    });
+  }
+
+  // Modal: Open Create Teacher
+  const btnOpenCreateTeacher = document.getElementById('btn-open-create-teacher');
+  if (btnOpenCreateTeacher) {
+    btnOpenCreateTeacher.addEventListener('click', () => {
+      const form = document.getElementById('form-create-teacher');
+      if (form) form.reset();
+      document.getElementById('modal-create-teacher').classList.add('active');
+    });
+  }
+
+  // Form: Create Teacher Submit
+  const formCreateTeacher = document.getElementById('form-create-teacher');
+  if (formCreateTeacher) {
+    formCreateTeacher.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('teacher-create-name').value.trim();
+      const email = document.getElementById('teacher-create-email').value.trim();
+      const password = document.getElementById('teacher-create-password').value;
+
+      try {
+        await DB.createTeacher(name, email, password);
+        Toast.show(`Teacher profile for "${name}" created successfully.`, 'success');
+        document.getElementById('modal-create-teacher').classList.remove('active');
+        await DB.syncAllData();
+        UI.renderTeachers();
+      } catch (err) {
+        Toast.show(err.message || 'Failed to create teacher profile.', 'danger');
+      }
+    });
+  }
+
+  // Event Delegation: Open Edit Teacher Modal
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-edit-teacher');
+    if (!btn) return;
+
+    const teacherId = btn.getAttribute('data-id');
+    const name = btn.getAttribute('data-name');
+    const email = btn.getAttribute('data-email');
+    const banned = btn.getAttribute('data-banned') === 'true';
+
+    document.getElementById('edit-teacher-id').value = teacherId;
+    document.getElementById('edit-teacher-name-input').value = name;
+    document.getElementById('edit-teacher-email-input').value = email;
+    document.getElementById('edit-teacher-banned').checked = banned;
+
+    document.getElementById('edit-teacher-summary-name').innerText = name;
+    document.getElementById('edit-teacher-summary-email').innerText = email;
+    document.getElementById('edit-teacher-avatar').innerText = name.substring(0, 1).toUpperCase();
+
+    document.getElementById('modal-edit-teacher').classList.add('active');
+  });
+
+  // Form: Edit Teacher Submit
+  const formEditTeacher = document.getElementById('form-edit-teacher');
+  if (formEditTeacher) {
+    formEditTeacher.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const teacherId = document.getElementById('edit-teacher-id').value;
+      const name = document.getElementById('edit-teacher-name-input').value.trim();
+      const email = document.getElementById('edit-teacher-email-input').value.trim();
+      const banned = document.getElementById('edit-teacher-banned').checked;
+
+      try {
+        await DB.updateTeacher(teacherId, name, email, banned);
+        Toast.show('Teacher profile updated successfully.', 'success');
+        document.getElementById('modal-edit-teacher').classList.remove('active');
+        await DB.syncAllData();
+        if (AppState.activeView === 'view-teachers') {
+          UI.renderTeachers();
+        } else if (AppState.activeView === 'view-batches') {
+          UI.renderBatches();
+        }
+      } catch (err) {
+        Toast.show('Failed to update teacher profile.', 'danger');
+      }
+    });
+  }
+
+  // Action: Wipe Teacher Profile (within edit modal)
+  const btnWipeTeacher = document.getElementById('btn-wipe-teacher');
+  if (btnWipeTeacher) {
+    btnWipeTeacher.addEventListener('click', async () => {
+      const teacherId = document.getElementById('edit-teacher-id').value;
+      const name = document.getElementById('edit-teacher-summary-name').innerText;
+
+      if (confirm(`WIPE TEACHER PROFILE?\n\nAre you sure you want to permanently delete teacher "${name}"? All batches taught by this teacher will be reset to TBD.`)) {
+        try {
+          await DB.deleteTeacher(teacherId);
+          Toast.show(`Teacher "${name}" deleted successfully.`, 'success');
+          document.getElementById('modal-edit-teacher').classList.remove('active');
+          await DB.syncAllData();
+          if (AppState.activeView === 'view-teachers') {
+            UI.renderTeachers();
+          } else if (AppState.activeView === 'view-batches') {
+            UI.renderBatches();
+          }
+        } catch (err) {
+          Toast.show('Failed to wipe teacher profile.', 'danger');
+        }
+      }
+    });
+  }
+
+  // Event Delegation: Delete Teacher Profile (from row)
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-delete-teacher');
+    if (!btn) return;
+
+    const teacherId = btn.getAttribute('data-id');
+    const name = btn.getAttribute('data-name');
+
+    if (confirm(`WIPE TEACHER PROFILE?\n\nAre you sure you want to permanently delete teacher "${name}"? All batches taught by this teacher will be reset to TBD.`)) {
+      try {
+        await DB.deleteTeacher(teacherId);
+        Toast.show(`Teacher "${name}" deleted successfully.`, 'success');
+        await DB.syncAllData();
+        UI.renderTeachers();
+      } catch (err) {
+        Toast.show('Failed to wipe teacher profile.', 'danger');
+      }
+    }
+  });
 
 });
