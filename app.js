@@ -251,6 +251,8 @@ const DB = {
       }
     }
     AppState.currentUser = null;
+    localStorage.removeItem('hq_session_is_mock');
+    localStorage.removeItem('hq_session_user');
     document.body.classList.add('auth-mode');
     Toast.show('Session closed successfully.', 'info');
   },
@@ -1273,9 +1275,96 @@ function escapeHTML(str) {
             .replace(/'/g, '&#039;');
 }
 
+// Session auto-recovery on page load
+async function checkActiveSession() {
+  const wasMock = localStorage.getItem('hq_session_is_mock') === 'true';
+  const mockUserJson = localStorage.getItem('hq_session_user');
+  
+  if (wasMock && mockUserJson) {
+    try {
+      AppState.isMockMode = true;
+      AppState.currentUser = JSON.parse(mockUserJson);
+      
+      // Sync toggle state in UI
+      const mockToggle = document.getElementById('mock-mode-toggle');
+      if (mockToggle) mockToggle.checked = true;
+      
+      await restoreSessionUI();
+      return;
+    } catch (_) {}
+  }
+
+  // Live Appwrite session check
+  AppState.isMockMode = false;
+  if (initAppwrite()) {
+    try {
+      const user = await appwriteAccount.get();
+      const profile = await appwriteDatabases.getDocument(
+        AppwriteConfig.databaseId,
+        AppwriteConfig.collections.users,
+        user.$id
+      );
+
+      if (profile.role === 'admin') {
+        AppState.currentUser = {
+          userId: profile.$id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          joinedAt: profile.joinedAt
+        };
+        
+        localStorage.setItem('hq_session_is_mock', 'false');
+        
+        // Sync toggle state in UI
+        const mockToggle = document.getElementById('mock-mode-toggle');
+        if (mockToggle) mockToggle.checked = false;
+        
+        await restoreSessionUI();
+      } else {
+        await appwriteAccount.deleteSession('current');
+      }
+    } catch (err) {
+      console.log('No active Appwrite session found on startup.');
+    }
+  }
+}
+
+// Restore user interface once authenticated
+async function restoreSessionUI() {
+  // Update UI Connection Status
+  const statusBadge = document.getElementById('app-status-badge');
+  const statusText = statusBadge.querySelector('.status-text');
+  const statusDot = statusBadge.querySelector('.dot');
+
+  if (AppState.isMockMode) {
+    statusText.innerText = 'MOCK MODE';
+    statusDot.className = 'dot';
+  } else {
+    statusText.innerText = 'APPWRITE LIVE';
+    statusDot.className = 'dot live';
+  }
+
+  // Sync user profile stats
+  document.getElementById('sidebar-user-name').innerText = AppState.currentUser.name;
+  document.getElementById('sidebar-avatar').innerText = AppState.currentUser.name.substring(0, 1).toUpperCase();
+
+  // Sync DB lists
+  await DB.syncAllData();
+  
+  // Transition out of auth screen
+  document.body.classList.remove('auth-mode');
+  
+  // Default view
+  UI.switchView('view-dashboard');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize mock structure
   MockDB.initialize();
+
+  // Recover active session on page startup
+  checkActiveSession();
 
   // Handle Login submission
   const loginForm = document.getElementById('login-form');
@@ -1295,6 +1384,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // Execute DB verification
       await DB.authenticate(email, password);
       
+      // Cache session metadata locally
+      localStorage.setItem('hq_session_is_mock', AppState.isMockMode ? 'true' : 'false');
+      if (AppState.isMockMode) {
+        localStorage.setItem('hq_session_user', JSON.stringify(AppState.currentUser));
+      } else {
+        localStorage.removeItem('hq_session_user');
+      }
+
       // Update UI Connection Status
       const statusBadge = document.getElementById('app-status-badge');
       const statusText = statusBadge.querySelector('.status-text');
