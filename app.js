@@ -206,7 +206,7 @@ const DB = {
       
       // Clear current sessions
       try {
-        await appwriteAccount.deleteSession({ sessionId: 'current' });
+        await appwriteAccount.deleteSession('current');
       } catch (_) {}
 
       // Login trigger
@@ -226,7 +226,7 @@ const DB = {
       );
 
       if (profile.role !== 'admin') {
-        await appwriteAccount.deleteSession({ sessionId: 'current' });
+        await appwriteAccount.deleteSession('current');
         throw new Error('Access denied. This dashboard is reserved for Admins only.');
       }
 
@@ -245,7 +245,7 @@ const DB = {
   async signout() {
     if (!AppState.isMockMode && appwriteAccount) {
       try {
-        await appwriteAccount.deleteSession({ sessionId: 'current' });
+        await appwriteAccount.deleteSession('current');
       } catch (e) {
         console.error('Session delete error', e);
       }
