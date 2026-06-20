@@ -260,6 +260,16 @@ async function callLiveDB(action, ...args) {
   }
 }
 
+// Helper: Generates a custom unique ID locally to synchronize Auth and DB accounts
+function generateUniqueID() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 20; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 // Helper: Creates a user account in Appwrite Auth as a guest fetch request to avoid current session lockout
 async function createAppwriteAuthAccount(userId, email, password, name) {
   try {
@@ -677,7 +687,7 @@ const DB = {
       MockDB.set('users', users);
       return newStudent;
     } else {
-      const id = ID.unique();
+      const id = generateUniqueID();
       // First register in Appwrite Auth
       await createAppwriteAuthAccount(id, email, password, name);
 
@@ -767,7 +777,7 @@ const DB = {
       MockDB.set('users', users);
       return newTeacher;
     } else {
-      const id = ID.unique();
+      const id = generateUniqueID();
       // First register in Appwrite Auth
       await createAppwriteAuthAccount(id, email, password, name);
 
