@@ -580,8 +580,7 @@ const DB = {
       }
     } else {
       try {
-        await appwriteDatabases.updateDocument(
-          AppwriteConfig.databaseId,
+        await resilientUpdate(
           AppwriteConfig.collections.batches,
           batchId,
           { isAccessEnabled: targetState }
@@ -634,8 +633,7 @@ const DB = {
 
       if (queryRes.documents.length > 0) {
         const docId = queryRes.documents[0].$id;
-        await appwriteDatabases.updateDocument(
-          AppwriteConfig.databaseId,
+        await resilientUpdate(
           AppwriteConfig.collections.enrollments,
           docId,
           {
@@ -706,8 +704,7 @@ const DB = {
         MockDB.set('users', users);
       }
     } else {
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.users,
         studentId,
         { name, email }
@@ -869,8 +866,7 @@ const DB = {
           [Query.equal('teacherId', teacherId)]
         );
         for (const doc of queryRes.documents) {
-          await appwriteDatabases.updateDocument(
-            AppwriteConfig.databaseId,
+          await resilientUpdate(
             AppwriteConfig.collections.batches,
             doc.$id,
             {
