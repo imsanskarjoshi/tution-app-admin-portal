@@ -167,6 +167,13 @@ const MockDB = {
         { id: 'cp_3', code: 'EXPIRED20', discount: 20, isActive: false }
       ]));
     }
+    if (!localStorage.getItem('hq_mock_teacher_attendance')) {
+      const today = new Date().toISOString().split('T')[0];
+      localStorage.setItem('hq_mock_teacher_attendance', JSON.stringify([
+        { teacherId: 't_1', teacherName: 'Prof. Verma', date: today, status: 'present', notes: 'Checked in at 9:00 AM' },
+        { teacherId: 't_2', teacherName: 'Dr. Mehta', date: today, status: 'late', notes: '15 mins late' }
+      ]));
+    }
   },
 
   get(key) {
@@ -352,6 +359,7 @@ const DB = {
       AppState.announcements = MockDB.get('announcements');
       AppState.transactions = MockDB.get('transactions');
       AppState.coupons = MockDB.get('coupons');
+      AppState.teacherAttendance = MockDB.get('teacher_attendance');
     } else {
       // Fetch Live collections
       const promises = [
@@ -376,11 +384,16 @@ const DB = {
           console.warn('Coupons collection not found or accessible in Appwrite database.', err);
           return { documents: [] };
         });
+      const taPromise = appwriteDatabases.listDocuments(AppwriteConfig.databaseId, 'teacher_attendance')
+        .catch(err => {
+          console.warn('teacher_attendance collection not found or accessible in Appwrite database.', err);
+          return { documents: [] };
+        });
 
-      promises.push(txPromise, cpPromise);
+      promises.push(txPromise, cpPromise, taPromise);
 
       const [
-        batchesDoc, studentsDoc, teachersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc, transactionsDoc, couponsDoc
+        batchesDoc, studentsDoc, teachersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc, transactionsDoc, couponsDoc, teacherAttendanceDoc
       ] = await Promise.all(promises);
 
       // Map doc entries
@@ -394,6 +407,7 @@ const DB = {
       AppState.announcements = announcementsDoc.documents.map(d => ({ announcementId: d.$id, ...d }));
       AppState.transactions = transactionsDoc.documents.map(d => ({ id: d.$id, ...d }));
       AppState.coupons = couponsDoc.documents.map(d => ({ id: d.$id, ...d }));
+      AppState.teacherAttendance = teacherAttendanceDoc.documents.map(d => ({ id: d.$id, ...d }));
     }
   },
 
@@ -1231,6 +1245,61 @@ const DB = {
         throw e;
       }
     }
+  },
+
+  // Log Teacher Attendance
+  async logTeacherAttendance(teacherId, date, status, notes = '') {
+    if (AppState.isMockMode) {
+      const attendance = MockDB.get('teacher_attendance');
+      // Filter out existing matching records to update
+      const filtered = attendance.filter(a => !(a.teacherId === teacherId && a.date === date));
+      const teacher = AppState.teachers.find(t => t.userId === teacherId);
+      const teacherName = teacher ? teacher.name : 'Tutor';
+      
+      filtered.push({
+        teacherId,
+        teacherName,
+        date,
+        status,
+        notes
+      });
+      MockDB.set('teacher_attendance', filtered);
+    } else {
+      try {
+        const queryRes = await appwriteDatabases.listDocuments(
+          AppwriteConfig.databaseId,
+          'teacher_attendance',
+          [Query.equal('teacherId', teacherId), Query.equal('date', date)]
+        );
+        
+        const payload = {
+          teacherId,
+          teacherName: AppState.teachers.find(t => t.userId === teacherId)?.name || 'Tutor',
+          date,
+          status,
+          notes
+        };
+        
+        if (queryRes.documents.length > 0) {
+          await appwriteDatabases.updateDocument(
+            AppwriteConfig.databaseId,
+            'teacher_attendance',
+            queryRes.documents[0].$id,
+            payload
+          );
+        } else {
+          await appwriteDatabases.createDocument(
+            AppwriteConfig.databaseId,
+            'teacher_attendance',
+            ID.unique(),
+            payload
+          );
+        }
+      } catch (err) {
+        console.error('Failed to log Appwrite teacher attendance:', err);
+        throw err;
+      }
+    }
   }
 };
 
@@ -1284,6 +1353,9 @@ const UI = {
         break;
       case 'view-teachers':
         UI.renderTeachers();
+        break;
+      case 'view-attendance':
+        UI.renderAttendance();
         break;
     }
   },
@@ -2203,6 +2275,113 @@ const UI = {
       `;
       tbody.appendChild(row);
     });
+  },
+
+  // Render: Teacher Attendance management
+  renderAttendance() {
+    const dateInput = document.getElementById('attendance-date');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    const selectedDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+
+    // 1. Populate Teacher list for marking
+    const container = document.getElementById('teacher-attendance-list-container');
+    container.innerHTML = '';
+
+    if (AppState.teachers.length === 0) {
+      container.innerHTML = '<p class="text-secondary text-center" style="font-size:12px; padding: 20px 0;">No educators registered in directory.</p>';
+    } else {
+      AppState.teachers.forEach(teacher => {
+        // Find existing record for this teacher and date
+        const existing = AppState.teacherAttendance.find(a => a.teacherId === teacher.userId && a.date === selectedDate);
+        const status = existing ? existing.status : 'present';
+        const notes = existing ? existing.notes : '';
+
+        const card = document.createElement('div');
+        card.className = 'teacher-attendance-card bg-glass';
+        card.style = 'padding: 16px; border-radius: 12px; border: 1px solid var(--border-card); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 12px;';
+        
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <strong style="color:white; font-size:14px;">${escapeHTML(teacher.name)}</strong>
+              <div style="color:var(--text-secondary); font-size:11px; margin-top:2px;">${escapeHTML(teacher.email)}</div>
+            </div>
+            
+            <!-- Segmented status group -->
+            <div class="attendance-status-group" data-teacher-id="${teacher.userId}" style="display:flex; background:rgba(0,0,0,0.3); border-radius:8px; padding:2px; border:1px solid var(--border-card);">
+              <label style="margin:0; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; color:${status === 'present' ? 'white' : 'var(--text-secondary)'}; background:${status === 'present' ? 'var(--success)' : 'transparent'}; transition:all 0.2s;">
+                <input type="radio" name="status-${teacher.userId}" value="present" ${status === 'present' ? 'checked' : ''} style="display:none;"> Present
+              </label>
+              <label style="margin:0; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; color:${status === 'late' ? 'white' : 'var(--text-secondary)'}; background:${status === 'late' ? '#F59E0B' : 'transparent'}; transition:all 0.2s;">
+                <input type="radio" name="status-${teacher.userId}" value="late" ${status === 'late' ? 'checked' : ''} style="display:none;"> Late
+              </label>
+              <label style="margin:0; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; color:${status === 'absent' ? 'white' : 'var(--text-secondary)'}; background:${status === 'absent' ? 'var(--danger)' : 'transparent'}; transition:all 0.2s;">
+                <input type="radio" name="status-${teacher.userId}" value="absent" ${status === 'absent' ? 'checked' : ''} style="display:none;"> Absent
+              </label>
+              <label style="margin:0; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; color:${status === 'leave' ? 'white' : 'var(--text-secondary)'}; background:${status === 'leave' ? '#6B7280' : 'transparent'}; transition:all 0.2s;">
+                <input type="radio" name="status-${teacher.userId}" value="leave" ${status === 'leave' ? 'checked' : ''} style="display:none;"> Leave
+              </label>
+            </div>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <input type="text" class="form-control attendance-notes" placeholder="Notes or remarks..." value="${escapeHTML(notes)}" style="height:32px; font-size:12px; background:rgba(0,0,0,0.2); border:1px solid var(--border-card); border-radius:6px; color:white;">
+          </div>
+        `;
+
+        // Add interactive style toggle for radios
+        card.querySelectorAll('input[type="radio"]').forEach(rad => {
+          rad.addEventListener('change', (e) => {
+            const group = rad.closest('.attendance-status-group');
+            group.querySelectorAll('label').forEach(lbl => {
+              lbl.style.background = 'transparent';
+              lbl.style.color = 'var(--text-secondary)';
+            });
+            const lbl = rad.closest('label');
+            const val = rad.value;
+            let bg = 'transparent';
+            if (val === 'present') bg = 'var(--success)';
+            if (val === 'late') bg = '#F59E0B';
+            if (val === 'absent') bg = 'var(--danger)';
+            if (val === 'leave') bg = '#6B7280';
+            lbl.style.background = bg;
+            lbl.style.color = 'white';
+          });
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    // 2. Populate History list
+    const tbody = document.querySelector('#teacher-attendance-history-table tbody');
+    tbody.innerHTML = '';
+
+    if (AppState.teacherAttendance.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-secondary">No attendance history logged.</td></tr>`;
+      return;
+    }
+
+    // Sort descending by date
+    const sorted = [...AppState.teacherAttendance].sort((a,b) => b.date.localeCompare(a.date));
+    sorted.forEach(record => {
+      let badge = '';
+      if (record.status === 'present') badge = '<span class="badge badge-success">Present</span>';
+      if (record.status === 'late') badge = '<span class="badge badge-warning-glow" style="background:#F59E0B; color:white; border:none;">Late</span>';
+      if (record.status === 'absent') badge = '<span class="badge badge-danger">Absent</span>';
+      if (record.status === 'leave') badge = '<span class="badge badge-info" style="background:#6B7280; color:white; border:none;">On Leave</span>';
+
+      const formattedDate = new Date(record.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><strong>${formattedDate}</strong></td>
+        <td><strong>${escapeHTML(record.teacherName)}</strong></td>
+        <td>${badge}</td>
+        <td><span class="text-secondary" style="font-size:12px;">${escapeHTML(record.notes || '--')}</span></td>
+      `;
+      tbody.appendChild(row);
+    });
   }
 };
 
@@ -2458,6 +2637,50 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filter-students-plan').addEventListener('change', () => UI.renderStudents());
   document.getElementById('search-materials').addEventListener('input', () => UI.renderMaterials());
   document.getElementById('filter-materials-type').addEventListener('change', () => UI.renderMaterials());
+
+  // Attendance Date Change listener
+  const attDateInput = document.getElementById('attendance-date');
+  if (attDateInput) {
+    attDateInput.addEventListener('change', () => {
+      UI.renderAttendance();
+    });
+  }
+
+  // Save Teacher Attendance Button click listener
+  const btnSaveTeacherAtt = document.getElementById('btn-save-teacher-attendance');
+  if (btnSaveTeacherAtt) {
+    btnSaveTeacherAtt.addEventListener('click', async () => {
+      const selectedDate = document.getElementById('attendance-date').value;
+      if (!selectedDate) {
+        Toast.show('Please select a valid date.', 'warning');
+        return;
+      }
+
+      btnSaveTeacherAtt.disabled = true;
+      btnSaveTeacherAtt.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+
+      try {
+        const cards = document.querySelectorAll('.teacher-attendance-card');
+        for (const card of cards) {
+          const group = card.querySelector('.attendance-status-group');
+          const teacherId = group.getAttribute('data-teacher-id');
+          const status = card.querySelector(`input[name="status-${teacherId}"]:checked`).value;
+          const notes = card.querySelector('.attendance-notes').value.trim();
+          
+          await DB.logTeacherAttendance(teacherId, selectedDate, status, notes);
+        }
+
+        Toast.show('Teacher attendance recorded successfully.', 'success');
+        await DB.syncAllData();
+        UI.renderAttendance();
+      } catch (err) {
+        Toast.show(err.message || 'Failed to save teacher attendance.', 'danger');
+      } finally {
+        btnSaveTeacherAtt.disabled = false;
+        btnSaveTeacherAtt.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Submit Attendance Log</span>`;
+      }
+    });
+  }
 
   // Global search redirect logic
   document.getElementById('global-search').addEventListener('input', (e) => {

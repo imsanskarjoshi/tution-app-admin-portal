@@ -1831,3 +1831,61 @@ body:not(.auth-mode):not(.loading-mode) #dashboard-layout { display: flex; }
   }
 }
 
+/* ==========================================================================
+   TEACHER ATTENDANCE DASHBOARD STYLES
+   ========================================================================== */
+.teacher-attendance-card {
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border-card);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  backdrop-filter: blur(10px);
+}
+
+.teacher-attendance-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.attendance-status-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4) !important;
+  border-radius: 10px;
+  padding: 3px;
+  border: 1px solid var(--border-card);
+  gap: 2px;
+}
+
+.attendance-status-group label {
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.attendance-notes {
+  height: 36px !important;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid var(--border-card) !important;
+  border-radius: 8px !important;
+  color: white !important;
+  transition: all 0.2s ease !important;
+}
+
+.attendance-notes:focus {
+  border-color: var(--primary) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+

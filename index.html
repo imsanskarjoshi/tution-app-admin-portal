@@ -122,6 +122,12 @@
             </a>
           </li>
           <li>
+            <a href="#" class="nav-item" data-view="view-attendance">
+              <i class="fa-regular fa-calendar-check"></i>
+              <span>Teacher Attendance</span>
+            </a>
+          </li>
+          <li>
             <a href="#" class="nav-item" data-view="view-materials">
               <i class="fa-solid fa-folder-open"></i>
               <span>Study Resources</span>
@@ -435,6 +441,62 @@
               <!-- Populated via JavaScript -->
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- View: Teacher Attendance -->
+      <section id="view-attendance" class="content-view">
+        <div class="view-header">
+          <div class="header-text">
+            <h2>Teacher Attendance Ledger</h2>
+            <p>Log educator check-ins, record daily status updates, and track presence history logs.</p>
+          </div>
+        </div>
+
+        <div class="moderation-split-panel">
+          <!-- Left side: Mark attendance -->
+          <div class="notice-composer bg-glass">
+            <div class="panel-header">
+              <h4>Log Daily Attendance</h4>
+            </div>
+            
+            <div class="form-group mt-15">
+              <label for="attendance-date">Attendance Date</label>
+              <input type="date" id="attendance-date" class="form-control" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-card); color: white; border-radius: 8px;">
+            </div>
+            
+            <div class="teacher-list-group mt-20" id="teacher-attendance-list-container" style="display:flex; flex-direction:column; gap:16px;">
+              <!-- Loaded dynamically with radio groups for each teacher -->
+            </div>
+            
+            <button id="btn-save-teacher-attendance" class="btn btn-primary btn-block mt-20" style="margin-top: 24px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Submit Attendance Log</span>
+            </button>
+          </div>
+
+          <!-- Right side: History logs -->
+          <div class="mod-chat-viewport bg-glass" style="height: auto;">
+            <div class="panel-header">
+              <h4>Attendance History Log</h4>
+            </div>
+            
+            <div class="notices-table-wrapper" style="overflow-y: auto; flex-grow: 1;">
+              <table class="data-table" id="teacher-attendance-history-table">
+                <thead>
+                  <tr>
+                    <th>Date Stamp</th>
+                    <th>Educator</th>
+                    <th>Attendance Status</th>
+                    <th>Notes/Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
