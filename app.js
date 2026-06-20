@@ -609,6 +609,7 @@ const DB = {
     } else {
       const id = ID.unique();
       const payload = {
+        userId: id,
         name,
         email,
         role: 'student',
@@ -701,6 +702,7 @@ const DB = {
     } else {
       const id = ID.unique();
       const payload = {
+        userId: id,
         name,
         email,
         role: 'teacher',
