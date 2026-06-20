@@ -60,9 +60,10 @@
 
         <div class="input-group">
           <label for="login-password">Password</label>
-          <div class="input-wrapper">
+          <div class="input-wrapper" style="position: relative;">
             <i class="fa-solid fa-lock"></i>
-            <input type="password" id="login-password" required placeholder="••••••••">
+            <input type="password" id="login-password" required placeholder="••••••••" style="padding-right: 40px;">
+            <i class="fa-solid fa-eye toggle-password" data-target="login-password" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); z-index: 10;"></i>
           </div>
         </div>
 
@@ -1013,7 +1014,10 @@
           </div>
           <div class="form-group">
             <label for="student-create-password">Temporary Password</label>
-            <input type="password" id="student-create-password" class="form-control" required placeholder="e.g. pass123" minlength="6">
+            <div style="position: relative;">
+              <input type="password" id="student-create-password" class="form-control" required placeholder="e.g. pass123" minlength="6" style="padding-right: 40px;">
+              <i class="fa-solid fa-eye toggle-password" data-target="student-create-password" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); z-index: 10;"></i>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1043,7 +1047,10 @@
           </div>
           <div class="form-group">
             <label for="teacher-create-password">Temporary Password</label>
-            <input type="password" id="teacher-create-password" class="form-control" required placeholder="e.g. pass123" minlength="6">
+            <div style="position: relative;">
+              <input type="password" id="teacher-create-password" class="form-control" required placeholder="e.g. pass123" minlength="6" style="padding-right: 40px;">
+              <i class="fa-solid fa-eye toggle-password" data-target="teacher-create-password" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); z-index: 10;"></i>
+            </div>
           </div>
         </div>
         <div class="modal-footer">

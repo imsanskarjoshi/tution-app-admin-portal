@@ -616,12 +616,25 @@ const DB = {
         joinedAt: new Date().toISOString(),
         isBanned: false
       };
-      return await appwriteDatabases.createDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collections.users,
-        id,
-        payload
-      );
+      try {
+        return await appwriteDatabases.createDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.users,
+          id,
+          payload
+        );
+      } catch (err) {
+        if (err.message && (err.message.includes('isBanned') || err.message.includes('Unknown attribute'))) {
+          delete payload.isBanned;
+          return await appwriteDatabases.createDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.users,
+            id,
+            payload
+          );
+        }
+        throw err;
+      }
     }
   },
 
@@ -709,12 +722,25 @@ const DB = {
         joinedAt: new Date().toISOString(),
         isBanned: false
       };
-      return await appwriteDatabases.createDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collections.users,
-        id,
-        payload
-      );
+      try {
+        return await appwriteDatabases.createDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.users,
+          id,
+          payload
+        );
+      } catch (err) {
+        if (err.message && (err.message.includes('isBanned') || err.message.includes('Unknown attribute'))) {
+          delete payload.isBanned;
+          return await appwriteDatabases.createDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.users,
+            id,
+            payload
+          );
+        }
+        throw err;
+      }
     }
   },
 
@@ -3591,6 +3617,24 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         Toast.show('Failed to wipe teacher profile.', 'danger');
       }
+    }
+  });
+
+  // Password Visibility Toggle Handler
+  document.addEventListener('click', (e) => {
+    const toggle = e.target.closest('.toggle-password');
+    if (!toggle) return;
+    const targetId = toggle.getAttribute('data-target');
+    const input = document.getElementById(targetId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      toggle.classList.remove('fa-eye');
+      toggle.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      toggle.classList.remove('fa-eye-slash');
+      toggle.classList.add('fa-eye');
     }
   });
 
