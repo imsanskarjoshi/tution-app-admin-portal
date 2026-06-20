@@ -260,6 +260,58 @@ async function callLiveDB(action, ...args) {
   }
 }
 
+// Resilient Appwrite Document Creation Helper (automatically omits unknown schema attributes dynamically)
+async function resilientCreate(collectionId, documentId, data) {
+  let payload = { ...data };
+  while (true) {
+    try {
+      return await appwriteDatabases.createDocument(
+        AppwriteConfig.databaseId,
+        collectionId,
+        documentId,
+        payload
+      );
+    } catch (err) {
+      if (err.message && err.message.includes('Unknown attribute')) {
+        const match = err.message.match(/attribute:\s*"?([^"\s]+)"?/i);
+        if (match && match[1]) {
+          const attr = match[1].replace(/['"]/g, '').trim();
+          delete payload[attr];
+          console.warn(`Omitted unknown attribute "${attr}" and retrying Appwrite creation...`);
+          continue;
+        }
+      }
+      throw err;
+    }
+  }
+}
+
+// Resilient Appwrite Document Update Helper (automatically omits unknown schema attributes dynamically)
+async function resilientUpdate(collectionId, documentId, data) {
+  let payload = { ...data };
+  while (true) {
+    try {
+      return await appwriteDatabases.updateDocument(
+        AppwriteConfig.databaseId,
+        collectionId,
+        documentId,
+        payload
+      );
+    } catch (err) {
+      if (err.message && err.message.includes('Unknown attribute')) {
+        const match = err.message.match(/attribute:\s*"?([^"\s]+)"?/i);
+        if (match && match[1]) {
+          const attr = match[1].replace(/['"]/g, '').trim();
+          delete payload[attr];
+          console.warn(`Omitted unknown attribute "${attr}" and retrying Appwrite update...`);
+          continue;
+        }
+      }
+      throw err;
+    }
+  }
+}
+
 // ==========================================================================
 // 5. LIVE & MOCK DATA CONTROLLER METHODS
 // ==========================================================================
@@ -446,25 +498,7 @@ const DB = {
         isAccessEnabled: true,
         createdAt: new Date().toISOString()
       };
-      try {
-        return await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
-          AppwriteConfig.collections.batches,
-          id,
-          payload
-        );
-      } catch (err) {
-        if (err.message && (err.message.includes('teacherName') || err.message.includes('Unknown attribute'))) {
-          delete payload.teacherName;
-          return await appwriteDatabases.createDocument(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collections.batches,
-            id,
-            payload
-          );
-        }
-        throw err;
-      }
+      return await resilientCreate(AppwriteConfig.collections.batches, id, payload);
     }
   },
 
@@ -486,26 +520,7 @@ const DB = {
         MockDB.set('batches', batches);
       }
     } else {
-      try {
-        await appwriteDatabases.updateDocument(
-          AppwriteConfig.databaseId,
-          AppwriteConfig.collections.batches,
-          batchId,
-          payload
-        );
-      } catch (err) {
-        if (err.message && (err.message.includes('teacherName') || err.message.includes('Unknown attribute'))) {
-          delete payload.teacherName;
-          await appwriteDatabases.updateDocument(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collections.batches,
-            batchId,
-            payload
-          );
-        } else {
-          throw err;
-        }
-      }
+      await resilientUpdate(AppwriteConfig.collections.batches, batchId, payload);
     }
   },
 
@@ -643,25 +658,7 @@ const DB = {
         joinedAt: new Date().toISOString(),
         isBanned: false
       };
-      try {
-        return await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
-          AppwriteConfig.collections.users,
-          id,
-          payload
-        );
-      } catch (err) {
-        if (err.message && (err.message.includes('isBanned') || err.message.includes('Unknown attribute'))) {
-          delete payload.isBanned;
-          return await appwriteDatabases.createDocument(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collections.users,
-            id,
-            payload
-          );
-        }
-        throw err;
-      }
+      return await resilientCreate(AppwriteConfig.collections.users, id, payload);
     }
   },
 
@@ -749,25 +746,7 @@ const DB = {
         joinedAt: new Date().toISOString(),
         isBanned: false
       };
-      try {
-        return await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
-          AppwriteConfig.collections.users,
-          id,
-          payload
-        );
-      } catch (err) {
-        if (err.message && (err.message.includes('isBanned') || err.message.includes('Unknown attribute'))) {
-          delete payload.isBanned;
-          return await appwriteDatabases.createDocument(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collections.users,
-            id,
-            payload
-          );
-        }
-        throw err;
-      }
+      return await resilientCreate(AppwriteConfig.collections.users, id, payload);
     }
   },
 
@@ -1386,6 +1365,67 @@ const UI = {
       }
       select.appendChild(option);
     });
+  },
+
+  // Pack day selections and time input into the schedule string
+  updateScheduleString() {
+    const selectedDays = [];
+    document.querySelectorAll('.day-btn.active').forEach(btn => {
+      selectedDays.push(btn.getAttribute('data-day'));
+    });
+    
+    const timeVal = document.getElementById('batch-time-picker').value;
+    if (selectedDays.length === 0 || !timeVal) {
+      document.getElementById('batch-schedule').value = '';
+      return;
+    }
+    
+    const [hours, minutes] = timeVal.split(':');
+    let hh = parseInt(hours, 10);
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12;
+    hh = hh ? hh : 12;
+    const hhStr = hh < 10 ? '0' + hh : hh;
+    const formattedTime = `${hhStr}:${minutes} ${ampm}`;
+    
+    document.getElementById('batch-schedule').value = `${selectedDays.join(', ')} - ${formattedTime}`;
+  },
+
+  // Unpack schedule string back into day selections and time picker
+  unpackScheduleString(scheduleStr) {
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.getElementById('batch-time-picker').value = '';
+    document.getElementById('batch-schedule').value = scheduleStr || '';
+    
+    if (!scheduleStr) return;
+    
+    const parts = scheduleStr.split(' - ');
+    if (parts.length < 2) return;
+    
+    const days = parts[0].split(', ').map(d => d.trim());
+    const time12h = parts[1].trim();
+    
+    days.forEach(day => {
+      const btn = document.querySelector(`.day-btn[data-day="${day}"]`);
+      if (btn) {
+        btn.classList.add('active');
+      }
+    });
+    
+    const timeMatch = time12h.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (timeMatch) {
+      let hh = parseInt(timeMatch[1], 10);
+      const mm = timeMatch[2];
+      const ampm = timeMatch[3].toUpperCase();
+      
+      if (ampm === 'PM' && hh < 12) hh += 12;
+      if (ampm === 'AM' && hh === 12) hh = 0;
+      
+      const hhStr = hh < 10 ? '0' + hh : hh;
+      document.getElementById('batch-time-picker').value = `${hhStr}:${mm}`;
+    }
   },
 
   // Navigation Routing Switcher
@@ -2800,6 +2840,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#modal-create-batch button[type="submit"]').innerText = 'Establish Classroom';
     document.getElementById('batch-code').value = 'BCH' + Math.floor(100 + Math.random() * 900);
     UI.populateTeacherDropdown();
+    UI.unpackScheduleString('');
     document.getElementById('modal-create-batch').classList.add('active');
   });
 
@@ -2816,10 +2857,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('batch-name').value = btn.getAttribute('data-name');
     document.getElementById('batch-subject').value = btn.getAttribute('data-subject');
     document.getElementById('batch-description').value = btn.getAttribute('data-desc');
-    document.getElementById('batch-schedule').value = btn.getAttribute('data-schedule') || '';
     document.getElementById('batch-code').value = btn.getAttribute('data-code');
 
     UI.populateTeacherDropdown(btn.getAttribute('data-teacher-name') || '');
+    UI.unpackScheduleString(btn.getAttribute('data-schedule') || '');
 
     document.querySelector('#modal-create-batch h3').innerText = 'Edit Batch Classroom';
     document.querySelector('#modal-create-batch button[type="submit"]').innerText = 'Save Changes';
@@ -3690,6 +3731,21 @@ document.addEventListener('DOMContentLoaded', () => {
       input.type = 'password';
       toggle.classList.remove('fa-eye-slash');
       toggle.classList.add('fa-eye');
+    }
+  });
+
+  // Day Selector Click Handler
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.day-btn');
+    if (!btn) return;
+    btn.classList.toggle('active');
+    UI.updateScheduleString();
+  });
+
+  // Time Picker Input Handler
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'batch-time-picker') {
+      UI.updateScheduleString();
     }
   });
 

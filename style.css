@@ -1888,4 +1888,30 @@ body:not(.auth-mode):not(.loading-mode) #dashboard-layout { display: flex; }
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
+/* Day Selector Buttons styling */
+.day-btn {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-card);
+  font-size: 12px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.day-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.day-btn.active {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+
 
