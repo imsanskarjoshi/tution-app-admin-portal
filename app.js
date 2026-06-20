@@ -1399,7 +1399,16 @@ const UI = {
     document.getElementById('batch-time-picker').value = '';
     document.getElementById('batch-schedule').value = scheduleStr || '';
     
-    if (!scheduleStr) return;
+    if (!scheduleStr) {
+      // Default to Mon, Wed, Fri and 16:00 (04:00 PM) for a clean, valid default state
+      ['Mon', 'Wed', 'Fri'].forEach(day => {
+        const btn = document.querySelector(`.day-btn[data-day="${day}"]`);
+        if (btn) btn.classList.add('active');
+      });
+      document.getElementById('batch-time-picker').value = '16:00';
+      UI.updateScheduleString();
+      return;
+    }
     
     const parts = scheduleStr.split(' - ');
     if (parts.length < 2) return;

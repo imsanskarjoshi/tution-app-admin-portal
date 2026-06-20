@@ -1273,6 +1273,9 @@ body:not(.auth-mode):not(.loading-mode) #dashboard-layout { display: flex; }
 .modal-card {
   width: 100%;
   max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
   background: rgba(21, 30, 46, 0.95);
   border: 1px solid var(--border-card);
   border-radius: 20px;
@@ -1310,6 +1313,8 @@ body:not(.auth-mode):not(.loading-mode) #dashboard-layout { display: flex; }
 
 .modal-body {
   padding: 24px;
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 .modal-footer {
