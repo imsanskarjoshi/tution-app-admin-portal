@@ -446,12 +446,25 @@ const DB = {
         isAccessEnabled: true,
         createdAt: new Date().toISOString()
       };
-      return await appwriteDatabases.createDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collections.batches,
-        id,
-        payload
-      );
+      try {
+        return await appwriteDatabases.createDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.batches,
+          id,
+          payload
+        );
+      } catch (err) {
+        if (err.message && (err.message.includes('teacherName') || err.message.includes('Unknown attribute'))) {
+          delete payload.teacherName;
+          return await appwriteDatabases.createDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.batches,
+            id,
+            payload
+          );
+        }
+        throw err;
+      }
     }
   },
 
@@ -473,12 +486,26 @@ const DB = {
         MockDB.set('batches', batches);
       }
     } else {
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collections.batches,
-        batchId,
-        payload
-      );
+      try {
+        await appwriteDatabases.updateDocument(
+          AppwriteConfig.databaseId,
+          AppwriteConfig.collections.batches,
+          batchId,
+          payload
+        );
+      } catch (err) {
+        if (err.message && (err.message.includes('teacherName') || err.message.includes('Unknown attribute'))) {
+          delete payload.teacherName;
+          await appwriteDatabases.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collections.batches,
+            batchId,
+            payload
+          );
+        } else {
+          throw err;
+        }
+      }
     }
   },
 
@@ -1335,6 +1362,32 @@ const DB = {
 // 6. UI VIEW DRAWING & CHARTING CONTROLLER
 // ==========================================================================
 const UI = {
+  // Populate Teacher Dropdown list for Batch Forms
+  populateTeacherDropdown(selectedTeacherName = '') {
+    const select = document.getElementById('batch-teacher-name');
+    if (!select) return;
+    select.innerHTML = '';
+    
+    // Add default admin/TBD option if no teachers exist
+    if (AppState.teachers.length === 0) {
+      const option = document.createElement('option');
+      option.value = AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin';
+      option.text = AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin';
+      select.appendChild(option);
+      return;
+    }
+    
+    AppState.teachers.forEach(teacher => {
+      const option = document.createElement('option');
+      option.value = teacher.name;
+      option.text = teacher.name + ` (${teacher.email})`;
+      if (selectedTeacherName && teacher.name.toLowerCase() === selectedTeacherName.toLowerCase()) {
+        option.selected = true;
+      }
+      select.appendChild(option);
+    });
+  },
+
   // Navigation Routing Switcher
   switchView(viewId) {
     AppState.activeView = viewId;
@@ -2746,6 +2799,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#modal-create-batch h3').innerText = 'Create New Batch';
     document.querySelector('#modal-create-batch button[type="submit"]').innerText = 'Establish Classroom';
     document.getElementById('batch-code').value = 'BCH' + Math.floor(100 + Math.random() * 900);
+    UI.populateTeacherDropdown();
     document.getElementById('modal-create-batch').classList.add('active');
   });
 
@@ -2763,8 +2817,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('batch-subject').value = btn.getAttribute('data-subject');
     document.getElementById('batch-description').value = btn.getAttribute('data-desc');
     document.getElementById('batch-schedule').value = btn.getAttribute('data-schedule') || '';
-    document.getElementById('batch-teacher-name').value = btn.getAttribute('data-teacher-name') || '';
     document.getElementById('batch-code').value = btn.getAttribute('data-code');
+
+    UI.populateTeacherDropdown(btn.getAttribute('data-teacher-name') || '');
 
     document.querySelector('#modal-create-batch h3').innerText = 'Edit Batch Classroom';
     document.querySelector('#modal-create-batch button[type="submit"]').innerText = 'Save Changes';

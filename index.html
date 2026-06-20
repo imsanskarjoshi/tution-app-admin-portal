@@ -799,7 +799,9 @@
           </div>
           <div class="form-group">
             <label for="batch-teacher-name">Assigned Teacher Name</label>
-            <input type="text" id="batch-teacher-name" class="form-control" placeholder="e.g. Sanskar Admin">
+            <select id="batch-teacher-name" class="form-control" required style="background: rgba(21, 30, 46, 0.85); color: white;">
+              <!-- Options populated dynamically from AppState.teachers -->
+            </select>
           </div>
           <div class="form-group">
             <label for="batch-description">Description</label>
