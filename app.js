@@ -260,6 +260,35 @@ async function callLiveDB(action, ...args) {
   }
 }
 
+// Helper: Creates a user account in Appwrite Auth as a guest fetch request to avoid current session lockout
+async function createAppwriteAuthAccount(userId, email, password, name) {
+  try {
+    const response = await fetch(`${AppwriteConfig.endpoint}/account`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': AppwriteConfig.projectId
+      },
+      credentials: 'omit',
+      body: JSON.stringify({
+        userId: userId,
+        email: email,
+        password: password,
+        name: name
+      })
+    });
+    
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to register authentication account.');
+    }
+    return await response.json();
+  } catch (err) {
+    console.error('Appwrite Auth registration failed:', err);
+    throw err;
+  }
+}
+
 // Resilient Appwrite Document Creation Helper (automatically omits unknown schema attributes dynamically)
 async function resilientCreate(collectionId, documentId, data) {
   let payload = { ...data };
@@ -651,6 +680,9 @@ const DB = {
       return newStudent;
     } else {
       const id = ID.unique();
+      // First register in Appwrite Auth
+      await createAppwriteAuthAccount(id, email, password, name);
+
       const payload = {
         userId: id,
         name,
@@ -739,6 +771,9 @@ const DB = {
       return newTeacher;
     } else {
       const id = ID.unique();
+      // First register in Appwrite Auth
+      await createAppwriteAuthAccount(id, email, password, name);
+
       const payload = {
         userId: id,
         name,
