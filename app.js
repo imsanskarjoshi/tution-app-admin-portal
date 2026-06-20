@@ -464,7 +464,7 @@ const DB = {
   },
 
   // CRUD: Create Batch
-  async createBatch(name, subject, description, code, schedule = '', teacherName = '') {
+  async createBatch(name, subject, description, code, schedule = '', teacherId = '', teacherName = '') {
     if (AppState.isMockMode) {
       const batches = MockDB.get('batches');
       if (batches.some(b => b.code.toUpperCase() === code.toUpperCase())) {
@@ -476,8 +476,8 @@ const DB = {
         subject,
         description,
         code: code.toUpperCase(),
-        teacherId: AppState.currentUser.userId,
-        teacherName: teacherName || AppState.currentUser.name,
+        teacherId: teacherId || (AppState.currentUser ? AppState.currentUser.userId : 'admin_hq'),
+        teacherName: teacherName || (AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin'),
         schedule: schedule || 'TBD',
         isAccessEnabled: true,
         createdAt: new Date().toISOString()
@@ -492,8 +492,8 @@ const DB = {
         description,
         subject,
         code: code.toUpperCase(),
-        teacherId: AppState.currentUser.userId,
-        teacherName: teacherName || AppState.currentUser.name,
+        teacherId: teacherId || (AppState.currentUser ? AppState.currentUser.userId : 'admin_hq'),
+        teacherName: teacherName || (AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin'),
         schedule: schedule || 'TBD',
         isAccessEnabled: true,
         createdAt: new Date().toISOString()
@@ -503,14 +503,15 @@ const DB = {
   },
 
   // CRUD: Update Batch
-  async updateBatch(batchId, name, subject, description, code, schedule = '', teacherName = '') {
+  async updateBatch(batchId, name, subject, description, code, schedule = '', teacherId = '', teacherName = '') {
     const payload = {
       name,
       description,
       subject,
       code: code.toUpperCase(),
       schedule,
-      teacherName
+      teacherId: teacherId || (AppState.currentUser ? AppState.currentUser.userId : 'admin_hq'),
+      teacherName: teacherName || (AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin')
     };
     if (AppState.isMockMode) {
       const batches = MockDB.get('batches');
@@ -1342,7 +1343,7 @@ const DB = {
 // ==========================================================================
 const UI = {
   // Populate Teacher Dropdown list for Batch Forms
-  populateTeacherDropdown(selectedTeacherName = '') {
+  populateTeacherDropdown(selectedTeacherVal = '') {
     const select = document.getElementById('batch-teacher-name');
     if (!select) return;
     select.innerHTML = '';
@@ -1350,7 +1351,7 @@ const UI = {
     // Add default admin/TBD option if no teachers exist
     if (AppState.teachers.length === 0) {
       const option = document.createElement('option');
-      option.value = AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin';
+      option.value = AppState.currentUser ? AppState.currentUser.userId : 'admin_hq';
       option.text = AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin';
       select.appendChild(option);
       return;
@@ -1358,9 +1359,9 @@ const UI = {
     
     AppState.teachers.forEach(teacher => {
       const option = document.createElement('option');
-      option.value = teacher.name;
+      option.value = teacher.userId;
       option.text = teacher.name + ` (${teacher.email})`;
-      if (selectedTeacherName && teacher.name.toLowerCase() === selectedTeacherName.toLowerCase()) {
+      if (selectedTeacherVal && (teacher.userId === selectedTeacherVal || teacher.name.toLowerCase() === selectedTeacherVal.toLowerCase())) {
         option.selected = true;
       }
       select.appendChild(option);
@@ -1752,7 +1753,7 @@ const UI = {
         <td><strong>${escapeHTML(batch.name)}</strong></td>
         <td><span class="badge badge-info">${escapeHTML(batch.subject)}</span></td>
         <td><code style="color:var(--secondary);font-size:14px;font-weight:700;">${escapeHTML(batch.code)}</code></td>
-        <td><span style="font-family:monospace;color:var(--text-secondary);">${escapeHTML(batch.teacherId)}</span></td>
+        <td><strong style="color:var(--text-primary);">${escapeHTML(batch.teacherName || 'TBD')}</strong></td>
         <td>${timeStr}</td>
         <td>${statusBadge}</td>
         <td>
@@ -1773,6 +1774,7 @@ const UI = {
                     data-subject="${escapeHTML(batch.subject)}" 
                     data-desc="${escapeHTML(batch.description || '')}" 
                     data-schedule="${escapeHTML(batch.schedule || '')}"
+                    data-teacher-id="${escapeHTML(batch.teacherId || '')}"
                     data-teacher-name="${escapeHTML(batch.teacherName || '')}"
                     data-code="${escapeHTML(batch.code)}">
               <i class="fa-solid fa-pen"></i> Edit
@@ -2868,7 +2870,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('batch-description').value = btn.getAttribute('data-desc');
     document.getElementById('batch-code').value = btn.getAttribute('data-code');
 
-    UI.populateTeacherDropdown(btn.getAttribute('data-teacher-name') || '');
+    UI.populateTeacherDropdown(btn.getAttribute('data-teacher-id') || btn.getAttribute('data-teacher-name') || '');
     UI.unpackScheduleString(btn.getAttribute('data-schedule') || '');
 
     document.querySelector('#modal-create-batch h3').innerText = 'Edit Batch Classroom';
@@ -2930,15 +2932,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const subject = document.getElementById('batch-subject').value;
     const desc = document.getElementById('batch-description').value;
     const schedule = document.getElementById('batch-schedule').value;
-    const teacherName = document.getElementById('batch-teacher-name').value;
+    
+    const teacherSelect = document.getElementById('batch-teacher-name');
+    const teacherId = teacherSelect.value;
+    let teacherName = '';
+    const teacherObj = AppState.teachers.find(t => t.userId === teacherId);
+    if (teacherObj) {
+      teacherName = teacherObj.name;
+    } else if (teacherId === (AppState.currentUser ? AppState.currentUser.userId : 'admin_hq')) {
+      teacherName = AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin';
+    } else {
+      const selectedOption = teacherSelect.options[teacherSelect.selectedIndex];
+      teacherName = selectedOption ? selectedOption.text.split(' (')[0] : 'Educator';
+    }
+
     const code = document.getElementById('batch-code').value;
 
     try {
       if (batchId) {
-        await DB.updateBatch(batchId, name, subject, desc, code, schedule, teacherName);
+        await DB.updateBatch(batchId, name, subject, desc, code, schedule, teacherId, teacherName);
         Toast.show('Classroom batch successfully updated.', 'success');
       } else {
-        await DB.createBatch(name, subject, desc, code, schedule, teacherName);
+        await DB.createBatch(name, subject, desc, code, schedule, teacherId, teacherName);
         Toast.show('Classroom batch successfully listed.', 'success');
       }
       document.getElementById('modal-create-batch').classList.remove('active');
