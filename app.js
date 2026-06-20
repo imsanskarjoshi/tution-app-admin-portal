@@ -3758,4 +3758,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Handle incomplete time selections gracefully (prevent native popup, show custom Toast)
+  document.addEventListener('invalid', (e) => {
+    if (e.target && e.target.id === 'batch-time-picker') {
+      if (e.target.validity.badInput) {
+        e.preventDefault();
+        Toast.show('Please complete the time selection (including AM/PM) or clear it.', 'danger');
+        e.target.focus();
+      }
+    }
+  }, true);
+
 });
