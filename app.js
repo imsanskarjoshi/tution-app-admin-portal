@@ -780,12 +780,7 @@ const DB = {
         email,
         isBanned
       };
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collections.users,
-        teacherId,
-        payload
-      );
+      await resilientUpdate(AppwriteConfig.collections.users, teacherId, payload);
 
       try {
         const queryRes = await appwriteDatabases.listDocuments(
@@ -794,8 +789,7 @@ const DB = {
           [Query.equal('teacherId', teacherId)]
         );
         for (const doc of queryRes.documents) {
-          await appwriteDatabases.updateDocument(
-            AppwriteConfig.databaseId,
+          await resilientUpdate(
             AppwriteConfig.collections.batches,
             doc.$id,
             { teacherName: name }
@@ -1737,7 +1731,7 @@ const UI = {
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;" class="text-muted">No classes matching query found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-muted">No classes matching query found.</td></tr>`;
       return;
     }
 
@@ -1749,11 +1743,18 @@ const UI = {
         ? `<span class="badge badge-success">Enabled</span>` 
         : `<span class="badge badge-danger">Disabled</span>`;
 
+      const teacherObj = AppState.teachers.find(t => t.userId === batch.teacherId);
+      const displayTeacherName = teacherObj 
+        ? teacherObj.name 
+        : (batch.teacherId === (AppState.currentUser ? AppState.currentUser.userId : 'admin_hq') 
+           ? (AppState.currentUser ? AppState.currentUser.name : 'Sanskar Admin') 
+           : (batch.teacherName || 'TBD'));
+
       row.innerHTML = `
         <td><strong>${escapeHTML(batch.name)}</strong></td>
         <td><span class="badge badge-info">${escapeHTML(batch.subject)}</span></td>
         <td><code style="color:var(--secondary);font-size:14px;font-weight:700;">${escapeHTML(batch.code)}</code></td>
-        <td><strong style="color:var(--text-primary);">${escapeHTML(batch.teacherName || 'TBD')}</strong></td>
+        <td><strong style="color:var(--text-primary);">${escapeHTML(displayTeacherName)}</strong></td>
         <td>${timeStr}</td>
         <td>${statusBadge}</td>
         <td>
@@ -1775,7 +1776,7 @@ const UI = {
                     data-desc="${escapeHTML(batch.description || '')}" 
                     data-schedule="${escapeHTML(batch.schedule || '')}"
                     data-teacher-id="${escapeHTML(batch.teacherId || '')}"
-                    data-teacher-name="${escapeHTML(batch.teacherName || '')}"
+                    data-teacher-name="${escapeHTML(displayTeacherName)}"
                     data-code="${escapeHTML(batch.code)}">
               <i class="fa-solid fa-pen"></i> Edit
             </button>
