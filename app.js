@@ -489,8 +489,8 @@ const DB = {
 
       // Map doc entries
       AppState.batches = batchesDoc.documents.map(d => ({ batchId: d.$id, ...d }));
-      AppState.students = studentsDoc.documents.map(d => ({ userId: d.$id, ...d }));
-      AppState.teachers = teachersDoc.documents.map(d => ({ userId: d.$id, ...d }));
+      AppState.students = studentsDoc.documents.map(d => ({ userId: d.$id, ...d })).filter(s => !s.isDeleted && s.role !== 'deleted');
+      AppState.teachers = teachersDoc.documents.map(d => ({ userId: d.$id, ...d })).filter(t => !t.isDeleted && t.role !== 'deleted');
       AppState.materials = materialsDoc.documents.map(d => ({ materialId: d.$id, ...d }));
       AppState.chats = chatsDoc.documents.map(d => ({ messageId: d.$id, ...d }));
       AppState.courses = coursesDoc.documents.map(d => ({ courseId: d.$id, ...d }));
@@ -733,10 +733,10 @@ const DB = {
       enrollments = enrollments.filter(e => e.studentId !== studentId);
       MockDB.set('enrollments', enrollments);
     } else {
-      await appwriteDatabases.deleteDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.users,
-        studentId
+        studentId,
+        { role: 'deleted', isBanned: true }
       );
 
       try {
@@ -863,10 +863,10 @@ const DB = {
         MockDB.set('batches', batches);
       }
     } else {
-      await appwriteDatabases.deleteDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.users,
-        teacherId
+        teacherId,
+        { role: 'deleted', isBanned: true }
       );
 
       try {
