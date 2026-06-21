@@ -3647,7 +3647,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await DB.syncAllData();
           UI.renderStudents();
         } catch (err) {
-          Toast.show('Failed to wipe student profile.', 'danger');
+          Toast.show(`Failed to wipe student profile: ${err.message || err}`, 'danger');
         }
       }
     });
@@ -3751,7 +3751,7 @@ document.addEventListener('DOMContentLoaded', () => {
             UI.renderBatches();
           }
         } catch (err) {
-          Toast.show('Failed to wipe teacher profile.', 'danger');
+          Toast.show(`Failed to wipe teacher profile: ${err.message || err}`, 'danger');
         }
       }
     });
@@ -3772,7 +3772,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await DB.syncAllData();
         UI.renderTeachers();
       } catch (err) {
-        Toast.show('Failed to wipe teacher profile.', 'danger');
+        Toast.show(`Failed to wipe teacher profile: ${err.message || err}`, 'danger');
       }
     }
   });
