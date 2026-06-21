@@ -652,8 +652,7 @@ const DB = {
           }
         );
       } else {
-        await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
+        await resilientCreate(
           AppwriteConfig.collections.enrollments,
           ID.unique(),
           {
@@ -923,8 +922,7 @@ const DB = {
         viewsCount: 0,
         createdAt: new Date().toISOString()
       };
-      return await appwriteDatabases.createDocument(
-        AppwriteConfig.databaseId,
+      return await resilientCreate(
         AppwriteConfig.collections.materials,
         id,
         payload
@@ -966,8 +964,7 @@ const DB = {
         MockDB.set('materials', materials);
       }
     } else {
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.materials,
         materialId,
         payload
@@ -985,8 +982,7 @@ const DB = {
         MockDB.set('materials', materials);
       }
     } else {
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.materials,
         materialId,
         { isDraft }
@@ -1007,8 +1003,7 @@ const DB = {
       try {
         const mat = AppState.materials.find(m => m.materialId === materialId);
         if (mat) {
-          await appwriteDatabases.updateDocument(
-            AppwriteConfig.databaseId,
+          await resilientUpdate(
             AppwriteConfig.collections.materials,
             materialId,
             { viewsCount: (mat.viewsCount || 0) + 1 }
@@ -1029,8 +1024,7 @@ const DB = {
       }
     } else {
       try {
-        await appwriteDatabases.updateDocument(
-          AppwriteConfig.databaseId,
+        await resilientUpdate(
           AppwriteConfig.collections.users,
           studentId,
           { isBanned }
@@ -1062,8 +1056,7 @@ const DB = {
       return newCp;
     } else {
       try {
-        return await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
+        return await resilientCreate(
           AppwriteConfig.collections.coupons,
           ID.unique(),
           {
@@ -1105,8 +1098,7 @@ const DB = {
         MockDB.set('coupons', coupons);
       }
     } else {
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.coupons,
         couponId,
         { isActive }
@@ -1132,8 +1124,7 @@ const DB = {
       return newTx;
     } else {
       try {
-        return await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
+        return await resilientCreate(
           AppwriteConfig.collections.transactions,
           ID.unique(),
           {
@@ -1183,8 +1174,7 @@ const DB = {
       return payload;
     } else {
       const id = ID.unique();
-      return await appwriteDatabases.createDocument(
-        AppwriteConfig.databaseId,
+      return await resilientCreate(
         AppwriteConfig.collections.announcements,
         id,
         payload
@@ -1222,8 +1212,7 @@ const DB = {
         MockDB.set('announcements', announcements);
       }
     } else {
-      await appwriteDatabases.updateDocument(
-        AppwriteConfig.databaseId,
+      await resilientUpdate(
         AppwriteConfig.collections.announcements,
         announcementId,
         payload
@@ -1260,15 +1249,13 @@ const DB = {
       MockDB.set('courses', courses);
     } else {
       if (courseId) {
-        await appwriteDatabases.updateDocument(
-          AppwriteConfig.databaseId,
+        await resilientUpdate(
           AppwriteConfig.collections.courses,
           courseId,
           payload
         );
       } else {
-        await appwriteDatabases.createDocument(
-          AppwriteConfig.databaseId,
+        await resilientCreate(
           AppwriteConfig.collections.courses,
           ID.unique(),
           payload
@@ -1303,8 +1290,7 @@ const DB = {
       }
     } else {
       try {
-        await appwriteDatabases.updateDocument(
-          AppwriteConfig.databaseId,
+        await resilientUpdate(
           AppwriteConfig.collections.courses,
           courseId,
           { isDraft }
@@ -1351,15 +1337,13 @@ const DB = {
         };
         
         if (queryRes.documents.length > 0) {
-          await appwriteDatabases.updateDocument(
-            AppwriteConfig.databaseId,
+          await resilientUpdate(
             'teacher_attendance',
             queryRes.documents[0].$id,
             payload
           );
         } else {
-          await appwriteDatabases.createDocument(
-            AppwriteConfig.databaseId,
+          await resilientCreate(
             'teacher_attendance',
             ID.unique(),
             payload
