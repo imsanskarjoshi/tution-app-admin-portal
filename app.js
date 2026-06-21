@@ -1518,9 +1518,20 @@ const UI = {
     document.getElementById('stat-batches').innerText = AppState.batches.length;
     document.getElementById('stat-materials').innerText = AppState.materials.length;
     
-    // Revenue calculator: base batch count revenue + store course mock sum
-    const totalEnrollmentsCount = AppState.enrollments.filter(e => e.subscriptionPlan !== 'expired').length;
-    const estimatedRev = (totalEnrollmentsCount * 25) + AppState.courses.reduce((sum, c) => sum + (c.price * 3), 0);
+    // Revenue calculator: active enrollment subscription plan pricing + store transactions checkout sum
+    const planPrices = {
+      '3_months': 1500,
+      '5_months': 2200,
+      '6_months': 2500,
+      '1_year': 4500,
+      'expired': 0
+    };
+    const enrollmentRev = AppState.enrollments
+      .filter(e => e.subscriptionPlan !== 'expired')
+      .reduce((sum, e) => sum + (planPrices[e.subscriptionPlan] || 0), 0);
+      
+    const transactionRev = AppState.transactions.reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+    const estimatedRev = enrollmentRev + transactionRev;
     document.getElementById('stat-revenue').innerText = `INR ${estimatedRev.toFixed(2)}`;
 
     // Draw Dashboard Charts
