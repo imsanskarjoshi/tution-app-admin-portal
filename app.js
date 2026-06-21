@@ -488,17 +488,17 @@ const DB = {
       ] = await Promise.all(promises);
 
       // Map doc entries
-      AppState.batches = batchesDoc.documents.map(d => ({ batchId: d.$id, ...d }));
-      AppState.students = studentsDoc.documents.map(d => ({ userId: d.$id, ...d })).filter(s => !s.isDeleted && s.role !== 'deleted');
-      AppState.teachers = teachersDoc.documents.map(d => ({ userId: d.$id, ...d })).filter(t => !t.isDeleted && t.role !== 'deleted');
-      AppState.materials = materialsDoc.documents.map(d => ({ materialId: d.$id, ...d }));
-      AppState.chats = chatsDoc.documents.map(d => ({ messageId: d.$id, ...d }));
-      AppState.courses = coursesDoc.documents.map(d => ({ courseId: d.$id, ...d }));
-      AppState.enrollments = enrollmentsDoc.documents.map(d => ({ id: d.$id, ...d }));
-      AppState.announcements = announcementsDoc.documents.map(d => ({ announcementId: d.$id, ...d }));
-      AppState.transactions = transactionsDoc.documents.map(d => ({ id: d.$id, ...d }));
-      AppState.coupons = couponsDoc.documents.map(d => ({ id: d.$id, ...d }));
-      AppState.teacherAttendance = teacherAttendanceDoc.documents.map(d => ({ id: d.$id, ...d }));
+      AppState.batches = batchesDoc.documents.map(d => ({ ...d, batchId: d.$id }));
+      AppState.students = studentsDoc.documents.map(d => ({ ...d, userId: d.$id })).filter(s => !s.isDeleted && s.role !== 'deleted');
+      AppState.teachers = teachersDoc.documents.map(d => ({ ...d, userId: d.$id })).filter(t => !t.isDeleted && t.role !== 'deleted');
+      AppState.materials = materialsDoc.documents.map(d => ({ ...d, materialId: d.$id }));
+      AppState.chats = chatsDoc.documents.map(d => ({ ...d, messageId: d.$id }));
+      AppState.courses = coursesDoc.documents.map(d => ({ ...d, courseId: d.$id }));
+      AppState.enrollments = enrollmentsDoc.documents.map(d => ({ ...d, id: d.$id }));
+      AppState.announcements = announcementsDoc.documents.map(d => ({ ...d, announcementId: d.$id }));
+      AppState.transactions = transactionsDoc.documents.map(d => ({ ...d, id: d.$id }));
+      AppState.coupons = couponsDoc.documents.map(d => ({ ...d, id: d.$id }));
+      AppState.teacherAttendance = teacherAttendanceDoc.documents.map(d => ({ ...d, id: d.$id }));
     }
   },
 
