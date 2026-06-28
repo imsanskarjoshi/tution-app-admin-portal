@@ -1389,14 +1389,18 @@ const UI = {
 
   // Pack day selections and time input into the schedule string
   updateScheduleString() {
+    const timeEl = document.getElementById('batch-time-picker');
+    const scheduleEl = document.getElementById('batch-schedule');
+    if (!timeEl || !scheduleEl) return;
+    
     const selectedDays = [];
     document.querySelectorAll('.day-btn.active').forEach(btn => {
       selectedDays.push(btn.getAttribute('data-day'));
     });
     
-    const timeVal = document.getElementById('batch-time-picker').value;
+    const timeVal = timeEl.value;
     if (selectedDays.length === 0 || !timeVal) {
-      document.getElementById('batch-schedule').value = '';
+      scheduleEl.value = '';
       return;
     }
     
@@ -1408,7 +1412,7 @@ const UI = {
     const hhStr = hh < 10 ? '0' + hh : hh;
     const formattedTime = `${hhStr}:${minutes} ${ampm}`;
     
-    document.getElementById('batch-schedule').value = `${selectedDays.join(', ')} - ${formattedTime}`;
+    scheduleEl.value = `${selectedDays.join(', ')} - ${formattedTime}`;
   },
 
   // Unpack schedule string back into day selections and time picker
@@ -1416,17 +1420,20 @@ const UI = {
     document.querySelectorAll('.day-btn').forEach(btn => {
       btn.classList.remove('active');
     });
-    document.getElementById('batch-time-picker').value = '';
-    document.getElementById('batch-schedule').value = scheduleStr || '';
+    const timeEl = document.getElementById('batch-time-picker');
+    const scheduleEl = document.getElementById('batch-schedule');
+    if (timeEl) timeEl.value = '';
+    if (scheduleEl) scheduleEl.value = scheduleStr || '';
     
     if (!scheduleStr) {
-      // Default to Mon, Wed, Fri and 16:00 (04:00 PM) for a clean, valid default state
-      ['Mon', 'Wed', 'Fri'].forEach(day => {
-        const btn = document.querySelector(`.day-btn[data-day="${day}"]`);
-        if (btn) btn.classList.add('active');
-      });
-      document.getElementById('batch-time-picker').value = '16:00';
-      UI.updateScheduleString();
+      if (timeEl) {
+        ['Mon', 'Wed', 'Fri'].forEach(day => {
+          const btn = document.querySelector(`.day-btn[data-day="${day}"]`);
+          if (btn) btn.classList.add('active');
+        });
+        timeEl.value = '16:00';
+        UI.updateScheduleString();
+      }
       return;
     }
     
@@ -1444,7 +1451,7 @@ const UI = {
     });
     
     const timeMatch = time12h.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (timeMatch) {
+    if (timeMatch && timeEl) {
       let hh = parseInt(timeMatch[1], 10);
       const mm = timeMatch[2];
       const ampm = timeMatch[3].toUpperCase();
@@ -1453,7 +1460,7 @@ const UI = {
       if (ampm === 'AM' && hh === 12) hh = 0;
       
       const hhStr = hh < 10 ? '0' + hh : hh;
-      document.getElementById('batch-time-picker').value = `${hhStr}:${mm}`;
+      timeEl.value = `${hhStr}:${mm}`;
     }
   },
 
