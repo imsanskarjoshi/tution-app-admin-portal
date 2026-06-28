@@ -441,12 +441,35 @@ const DB = {
   async syncAllData() {
     if (AppState.isMockMode) {
       AppState.batches = MockDB.get('batches');
-      AppState.students = MockDB.get('users').filter(u => u.role === 'student');
+      
+      const rawStudents = MockDB.get('users').filter(u => u.role === 'student');
+      const studentMap = new Map();
+      rawStudents.forEach(s => {
+        const key = (s.userId || s.email || '').toLowerCase();
+        if (!studentMap.has(key)) studentMap.set(key, s);
+      });
+      AppState.students = Array.from(studentMap.values());
+
       AppState.teachers = MockDB.get('users').filter(u => u.role === 'teacher');
       AppState.materials = MockDB.get('materials');
       AppState.chats = MockDB.get('chats');
       AppState.courses = MockDB.get('courses');
-      AppState.enrollments = MockDB.get('enrollments');
+
+      const rawEnrollments = MockDB.get('enrollments');
+      const enrollMap = new Map();
+      rawEnrollments.forEach(e => {
+        const key = `${e.studentId}_${e.batchId}`;
+        if (!enrollMap.has(key)) {
+          enrollMap.set(key, e);
+        } else {
+          const existing = enrollMap.get(key);
+          const existingTime = new Date(existing.subscriptionExpiresAt || existing.joinedAt || 0).getTime();
+          const newTime = new Date(e.subscriptionExpiresAt || e.joinedAt || 0).getTime();
+          if (newTime > existingTime) enrollMap.set(key, e);
+        }
+      });
+      AppState.enrollments = Array.from(enrollMap.values());
+
       AppState.announcements = MockDB.get('announcements');
       AppState.transactions = MockDB.get('transactions');
       AppState.coupons = MockDB.get('coupons');
@@ -487,14 +510,39 @@ const DB = {
         batchesDoc, studentsDoc, teachersDoc, materialsDoc, chatsDoc, coursesDoc, enrollmentsDoc, announcementsDoc, transactionsDoc, couponsDoc, teacherAttendanceDoc
       ] = await Promise.all(promises);
 
-      // Map doc entries
+      // Map doc entries with deduplication
       AppState.batches = batchesDoc.documents.map(d => ({ ...d, batchId: d.$id }));
-      AppState.students = studentsDoc.documents.map(d => ({ ...d, userId: d.$id })).filter(s => !s.isDeleted && s.role !== 'deleted');
+      
+      const studentMap = new Map();
+      studentsDoc.documents.forEach(d => {
+        const item = { ...d, userId: d.$id };
+        if (!item.isDeleted && item.role !== 'deleted') {
+          const key = (item.userId || item.email || '').toLowerCase();
+          if (!studentMap.has(key)) studentMap.set(key, item);
+        }
+      });
+      AppState.students = Array.from(studentMap.values());
+
       AppState.teachers = teachersDoc.documents.map(d => ({ ...d, userId: d.$id })).filter(t => !t.isDeleted && t.role !== 'deleted');
       AppState.materials = materialsDoc.documents.map(d => ({ ...d, materialId: d.$id }));
       AppState.chats = chatsDoc.documents.map(d => ({ ...d, messageId: d.$id }));
       AppState.courses = coursesDoc.documents.map(d => ({ ...d, courseId: d.$id }));
-      AppState.enrollments = enrollmentsDoc.documents.map(d => ({ ...d, id: d.$id }));
+      
+      const enrollMap = new Map();
+      enrollmentsDoc.documents.forEach(d => {
+        const item = { ...d, id: d.$id };
+        const key = `${item.studentId}_${item.batchId}`;
+        if (!enrollMap.has(key)) {
+          enrollMap.set(key, item);
+        } else {
+          const existing = enrollMap.get(key);
+          const existingTime = new Date(existing.subscriptionExpiresAt || existing.joinedAt || 0).getTime();
+          const newTime = new Date(item.subscriptionExpiresAt || item.joinedAt || 0).getTime();
+          if (newTime > existingTime) enrollMap.set(key, item);
+        }
+      });
+      AppState.enrollments = Array.from(enrollMap.values());
+
       AppState.announcements = announcementsDoc.documents.map(d => ({ ...d, announcementId: d.$id }));
       AppState.transactions = transactionsDoc.documents.map(d => ({ ...d, id: d.$id }));
       AppState.coupons = couponsDoc.documents.map(d => ({ ...d, id: d.$id }));
@@ -1876,8 +1924,20 @@ const UI = {
     }
 
     filtered.forEach(student => {
-      // Find batch enrollments
-      const studentEnrollments = AppState.enrollments.filter(e => e.studentId === student.userId);
+      // Find batch enrollments and deduplicate by batchId
+      const rawEnrollments = AppState.enrollments.filter(e => e.studentId === student.userId);
+      const enrollMap = new Map();
+      rawEnrollments.forEach(e => {
+        if (!enrollMap.has(e.batchId)) {
+          enrollMap.set(e.batchId, e);
+        } else {
+          const existing = enrollMap.get(e.batchId);
+          const existingTime = new Date(existing.subscriptionExpiresAt || existing.joinedAt || 0).getTime();
+          const newTime = new Date(e.subscriptionExpiresAt || e.joinedAt || 0).getTime();
+          if (newTime > existingTime) enrollMap.set(e.batchId, e);
+        }
+      });
+      const studentEnrollments = Array.from(enrollMap.values());
       
       const accountStatusBadge = student.isBanned 
         ? `<span class="badge badge-danger-glow"><i class="fa-solid fa-user-slash"></i> Suspended</span>` 
