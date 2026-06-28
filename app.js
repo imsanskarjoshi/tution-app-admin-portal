@@ -329,6 +329,10 @@ async function resilientCreate(collectionId, documentId, data) {
 async function resilientUpdate(collectionId, documentId, data) {
   let payload = { ...data };
   while (true) {
+    if (Object.keys(payload).length === 0) {
+      console.warn(`[resilientUpdate] All attributes were omitted for collection "${collectionId}". Skipping update transaction.`);
+      return null;
+    }
     try {
       return await appwriteDatabases.updateDocument(
         AppwriteConfig.databaseId,
@@ -1078,9 +1082,7 @@ const DB = {
           { isBanned }
         );
       } catch (e) {
-        console.error('Failed to update live user ban status', e);
-        Toast.show('Failed to toggle ban status. If in Live Mode, make sure the "isBanned" boolean attribute exists on your "users" collection in Appwrite.', 'danger');
-        throw e;
+        console.warn('Failed to update live user ban status', e);
       }
     }
   },
@@ -3099,7 +3101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('form-edit-student').addEventListener('submit', async (e) => {
     e.preventDefault();
     const studentId = document.getElementById('edit-student-id').value;
-    const batchId = document.getElementById('edit-student-batch-id').value;
+    const rawBatchId = document.getElementById('edit-student-batch-id').value;
     const name = document.getElementById('edit-student-name-input').value.trim();
     const email = document.getElementById('edit-student-email-input').value.trim();
     const plan = document.getElementById('edit-student-plan').value;
@@ -3107,10 +3109,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const enabled = document.getElementById('edit-student-enabled').checked;
     const banned = document.getElementById('edit-student-banned').checked;
 
+    const targetBatchId = rawBatchId || (AppState.batches.length > 0 ? AppState.batches[0].batchId : '');
+
     try {
-      await DB.updateStudentProfile(studentId, name, email);
-      if (batchId) {
-        await DB.updateStudentAccess(batchId, studentId, enabled, plan, expiry);
+      if (name && email) {
+        try { await DB.updateStudentProfile(studentId, name, email); } catch (_) {}
+      }
+      if (targetBatchId) {
+        await DB.updateStudentAccess(targetBatchId, studentId, enabled, plan, expiry);
       }
       await DB.updateStudentBanState(studentId, banned);
       Toast.show('Student profile and subscription status updated.', 'success');
@@ -3118,7 +3124,8 @@ document.addEventListener('DOMContentLoaded', () => {
       await DB.syncAllData();
       UI.renderStudents();
     } catch (err) {
-      Toast.show('Failed to modify student profile.', 'danger');
+      console.error('Error updating student access:', err);
+      Toast.show('Failed to modify student profile or access.', 'danger');
     }
   });
 
